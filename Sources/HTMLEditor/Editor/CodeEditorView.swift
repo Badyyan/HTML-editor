@@ -187,8 +187,8 @@ struct CodeEditorView: NSViewRepresentable {
             } else {
                 container.widthTracksTextView = false
                 container.size = NSSize(
-                    width: .greatestFiniteMagnitude,
-                    height: .greatestFiniteMagnitude
+                    width: CGFloat.greatestFiniteMagnitude,
+                    height: CGFloat.greatestFiniteMagnitude
                 )
                 textView.isHorizontallyResizable = true
                 textView.autoresizingMask = []
