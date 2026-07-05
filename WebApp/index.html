@@ -616,6 +616,70 @@
   .switch input:checked + .track { background: var(--accent); border-color: var(--accent); }
   .switch input:checked + .track::before { transform: translateX(14px); background: #fff; }
 
+  /* ---------- Email assets panel ---------- */
+  .assets-empty {
+    padding: 8px 10px; font-size: 12px; color: var(--fg-dim); line-height: 1.5;
+  }
+  .assets-empty button {
+    margin-top: 6px;
+    background: var(--accent); color: var(--accent-ink); border: none;
+    padding: 6px 10px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer;
+  }
+  .dropzone {
+    margin: 4px 6px 8px;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 8px;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--fg-dim);
+    cursor: pointer;
+  }
+  .dropzone.dragover { border-color: var(--accent); color: var(--accent); background: var(--current-line); }
+  .asset-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 8px; border-radius: var(--radius-sm);
+    font-size: 12px;
+  }
+  .asset-row:hover { background: var(--current-line); }
+  .asset-thumb {
+    width: 30px; height: 30px; border-radius: 5px; object-fit: cover;
+    background: var(--current-line); flex: none;
+    border: 1px solid var(--border);
+  }
+  .asset-meta { min-width: 0; flex: 1; }
+  .asset-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .asset-sub { font-size: 10px; color: var(--fg-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .asset-actions { display: flex; gap: 3px; flex: none; }
+  .asset-actions button {
+    width: 22px; height: 22px; border: none; background: transparent; color: var(--fg-dim);
+    border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .asset-actions button:hover { background: var(--selection); color: var(--fg); }
+  .asset-uploading { opacity: 0.55; }
+  .assets-note {
+    padding: 4px 10px 8px; font-size: 10.5px; color: var(--fg-dim); line-height: 1.45;
+  }
+  .field-label { display: block; font-size: 11.5px; color: var(--fg-dim); margin: 12px 0 4px; }
+  .field-input {
+    width: 100%; background: var(--current-line); color: var(--fg);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 7px 9px; font-size: 12.5px; font-family: var(--code-font);
+  }
+  .field-input:focus { border-color: var(--accent); outline: none; }
+  .modal .primary-btn {
+    margin-top: 16px;
+    background: var(--accent); color: var(--accent-ink); border: none;
+    padding: 8px 16px; border-radius: var(--radius-sm); font-size: 12.5px;
+    cursor: pointer; font-weight: 600;
+  }
+  .modal .danger-note {
+    margin-top: 14px; padding: 9px 11px; border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+    font-size: 11.5px; line-height: 1.5; color: var(--fg);
+  }
+
   .toast {
     position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
     background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow);
@@ -713,6 +777,19 @@
       <div class="sidebar-section" id="favorites-section" style="display:none;">
         <div class="sidebar-heading">Favorites</div>
         <div class="tree" id="favorites-tree"></div>
+      </div>
+      <div class="sidebar-section" id="assets-section" style="flex: 1.4;">
+        <div class="sidebar-heading">
+          Email Assets
+          <span class="grow"></span>
+          <button id="assets-refresh" title="Refresh cloud folder">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0114-5.3M20 12a8 8 0 01-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>
+          </button>
+          <button id="assets-config" title="Configure ImageKit">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+          </button>
+        </div>
+        <div class="tree" id="assets-body"></div>
       </div>
     </div>
     <div class="workspace-divider" id="sidebar-resizer"></div>
@@ -813,9 +890,37 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="assets-backdrop">
+  <div class="modal">
+    <h2>☁️ Email Assets — ImageKit</h2>
+    <p class="sub">Uploads go straight to your ImageKit media library and are served from its CDN.</p>
+
+    <label class="field-label" for="ik-endpoint">URL endpoint</label>
+    <input class="field-input" id="ik-endpoint" placeholder="https://ik.imagekit.io/your_id" spellcheck="false">
+
+    <label class="field-label" for="ik-public">Public key</label>
+    <input class="field-input" id="ik-public" placeholder="public_…" spellcheck="false">
+
+    <label class="field-label" for="ik-auth">Auth server URL (required for uploads)</label>
+    <input class="field-input" id="ik-auth" placeholder="https://imagekit-auth.you.workers.dev" spellcheck="false">
+
+    <label class="field-label" for="ik-folder">Upload folder</label>
+    <input class="field-input" id="ik-folder" placeholder="/email-assets" spellcheck="false">
+
+    <div class="danger-note">
+      Never enter your ImageKit <b>private</b> key here or anywhere in a browser —
+      it belongs only on the auth server (see <code>Server/imagekit-auth</code> in the repo).
+      The auth server signs each upload; this page only ever holds the public key.
+    </div>
+
+    <button class="primary-btn" id="ik-save">Save configuration</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <input type="file" id="file-input" multiple accept=".html,.htm,.css,.js,.mjs,.json,.txt,.svg,.md" style="display:none;">
+<input type="file" id="asset-file-input" multiple accept="image/*" style="display:none;">
 <input type="file" id="folder-input" webkitdirectory multiple style="display:none;">
 
 <script>
@@ -2181,6 +2286,210 @@
   $('#status-zoom-out').addEventListener('click', () => { settings.zoom = Math.max(0.5, settings.zoom - 0.1); persistSettings(); applyFont(); });
 
   /* =========================================================
+     Email Assets — ImageKit uploads + CDN URLs
+     The private key never touches this page: uploads are signed by a
+     separate auth server (Server/imagekit-auth) and sent with the
+     public key only.
+  ========================================================= */
+  const assets = (() => {
+    const DEFAULTS = {
+      endpoint: 'https://ik.imagekit.io/salla',
+      publicKey: 'public_NEsyax5TASo6/Ko4hy1ghDa0IGw=',
+      authUrl: '',
+      folder: '/email-assets'
+    };
+    let cfg = Object.assign({}, DEFAULTS, loadStore().imagekit || {});
+    let recent = loadStore().assetsRecent || []; // [{name,url,thumb}]
+    let cloud = [];        // last fetched folder listing
+    let uploading = 0;
+
+    function persist() {
+      saveStore({ imagekit: cfg, assetsRecent: recent.slice(0, 20) });
+    }
+
+    // Email clients (notably Outlook desktop) can't render WebP, and
+    // ImageKit's auto-format may serve it — so pin the format per asset.
+    function emailURL(rawUrl, name) {
+      const isPng = /\.png(\?|$)/i.test(name || rawUrl);
+      const tr = `tr=w-600,q-80,f-${isPng ? 'png' : 'jpg'}`;
+      return rawUrl + (rawUrl.includes('?') ? '&' : '?') + tr;
+    }
+
+    function emailImgTag(rawUrl, name) {
+      const alt = (name || '').replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ');
+      return `<img src="${emailURL(rawUrl, name)}" width="600" alt="${alt}" style="display:block;width:100%;max-width:600px;height:auto;border:0;">`;
+    }
+
+    async function copyText(text) {
+      try { await navigator.clipboard.writeText(text); return true; }
+      catch {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy'); ta.remove();
+        return true;
+      }
+    }
+
+    async function upload(file) {
+      if (!cfg.authUrl) { openConfig(); toast('Set the auth server URL first'); return; }
+      if (!/^image\//.test(file.type)) { toast(`"${file.name}" is not an image`); return; }
+      uploading++;
+      render();
+      try {
+        const authRes = await fetch(cfg.authUrl.replace(/\/$/, '') + '/auth');
+        if (!authRes.ok) throw new Error('Auth server returned ' + authRes.status);
+        const { token, expire, signature } = await authRes.json();
+
+        const form = new FormData();
+        form.append('file', file);
+        form.append('fileName', file.name);
+        form.append('publicKey', cfg.publicKey);
+        form.append('signature', signature);
+        form.append('expire', expire);
+        form.append('token', token);
+        form.append('folder', cfg.folder || '/email-assets');
+        form.append('useUniqueFileName', 'true');
+
+        const res = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
+          method: 'POST', body: form
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || 'Upload failed');
+
+        recent = [{ name: body.name, url: body.url, thumb: body.thumbnailUrl || body.url }, ...recent]
+          .slice(0, 20);
+        persist();
+        toast(`Uploaded ${body.name}`);
+      } catch (err) {
+        toast('Upload failed: ' + err.message);
+      } finally {
+        uploading--;
+        render();
+      }
+    }
+
+    async function refreshCloud() {
+      if (!cfg.authUrl) { openConfig(); return; }
+      try {
+        const listUrl = cfg.authUrl.replace(/\/$/, '') +
+          '/list?path=' + encodeURIComponent(cfg.folder || '/');
+        const res = await fetch(listUrl);
+        if (!res.ok) throw new Error('list returned ' + res.status);
+        const files = await res.json();
+        cloud = (Array.isArray(files) ? files : []).map(f => ({
+          name: f.name, url: f.url, thumb: f.thumbnail || f.thumbnailUrl || f.url
+        }));
+        render();
+        toast(`Folder ${cfg.folder}: ${cloud.length} image${cloud.length === 1 ? '' : 's'}`);
+      } catch (err) {
+        toast('Could not list folder: ' + err.message);
+      }
+    }
+
+    function assetRow(asset) {
+      const row = document.createElement('div');
+      row.className = 'asset-row';
+      row.innerHTML = `
+        <img class="asset-thumb" loading="lazy" alt="">
+        <div class="asset-meta">
+          <div class="asset-name"></div>
+          <div class="asset-sub"></div>
+        </div>
+        <div class="asset-actions">
+          <button title="Copy CDN URL"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 011-1h10"/></svg></button>
+          <button title="Insert &lt;img&gt; at cursor"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+        </div>`;
+      row.querySelector('.asset-thumb').src = asset.thumb + (asset.thumb.includes('?') ? '&' : '?') + 'tr=w-60,h-60';
+      row.querySelector('.asset-name').textContent = asset.name;
+      row.querySelector('.asset-sub').textContent = asset.url.replace(/^https?:\/\//, '');
+      const [copyBtn, insertBtn] = row.querySelectorAll('.asset-actions button');
+      copyBtn.addEventListener('click', async () => {
+        await copyText(emailURL(asset.url, asset.name));
+        toast('CDN URL copied');
+      });
+      insertBtn.addEventListener('click', () => {
+        inputEl.focus();
+        insertAtCaret(emailImgTag(asset.url, asset.name));
+        toast('<img> inserted');
+      });
+      return row;
+    }
+
+    function render() {
+      const body = $('#assets-body');
+      body.innerHTML = '';
+
+      if (!cfg.authUrl) {
+        const empty = document.createElement('div');
+        empty.className = 'assets-empty';
+        empty.innerHTML = `Upload images to ImageKit and get CDN URLs for your emails.
+          <br><button>Connect ImageKit</button>`;
+        empty.querySelector('button').addEventListener('click', openConfig);
+        body.appendChild(empty);
+        return;
+      }
+
+      const zone = document.createElement('div');
+      zone.className = 'dropzone';
+      zone.textContent = uploading > 0
+        ? `Uploading ${uploading} file${uploading === 1 ? '' : 's'}…`
+        : 'Drop images here or click to upload';
+      zone.addEventListener('click', () => $('#asset-file-input').click());
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault(); e.stopPropagation();
+        zone.classList.remove('dragover');
+        [...e.dataTransfer.files].forEach(upload);
+      });
+      body.appendChild(zone);
+
+      const shown = cloud.length ? cloud : recent;
+      for (const asset of shown.slice(0, 30)) body.appendChild(assetRow(asset));
+
+      if (shown.length) {
+        const note = document.createElement('div');
+        note.className = 'assets-note';
+        note.textContent = (cloud.length ? `Folder ${cfg.folder}` : 'Recent uploads') +
+          ' — URLs are pinned to w-600 + jpg/png for email-client compatibility.';
+        body.appendChild(note);
+      }
+    }
+
+    function openConfig() {
+      $('#ik-endpoint').value = cfg.endpoint;
+      $('#ik-public').value = cfg.publicKey;
+      $('#ik-auth').value = cfg.authUrl;
+      $('#ik-folder').value = cfg.folder;
+      $('#assets-backdrop').classList.add('open');
+    }
+
+    $('#ik-save').addEventListener('click', () => {
+      cfg = {
+        endpoint: $('#ik-endpoint').value.trim() || DEFAULTS.endpoint,
+        publicKey: $('#ik-public').value.trim() || DEFAULTS.publicKey,
+        authUrl: $('#ik-auth').value.trim(),
+        folder: $('#ik-folder').value.trim() || DEFAULTS.folder
+      };
+      if (cfg.folder && !cfg.folder.startsWith('/')) cfg.folder = '/' + cfg.folder;
+      persist();
+      $('#assets-backdrop').classList.remove('open');
+      render();
+      toast('ImageKit configuration saved');
+    });
+
+    $('#assets-config').addEventListener('click', openConfig);
+    $('#assets-refresh').addEventListener('click', refreshCloud);
+    $('#asset-file-input').addEventListener('change', e => {
+      [...e.target.files].forEach(upload);
+      e.target.value = '';
+    });
+
+    render();
+    return { render, openConfig };
+  })();
+
+  /* =========================================================
      Keyboard shortcuts (document-level)
   ========================================================= */
   document.addEventListener('keydown', (e) => {
@@ -2189,6 +2498,7 @@
       if (e.key === 'Escape') {
         if ($('#help-backdrop').classList.contains('open')) $('#help-backdrop').classList.remove('open');
         else if ($('#settings-backdrop').classList.contains('open')) $('#settings-backdrop').classList.remove('open');
+        else if ($('#assets-backdrop').classList.contains('open')) $('#assets-backdrop').classList.remove('open');
         else if ($('#findbar').classList.contains('open') && document.activeElement !== inputEl) closeFindBar();
       }
       return;

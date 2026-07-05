@@ -1,0 +1,16 @@
+# Cloudflare Worker config for the ImageKit auth server.
+#
+# Secrets (never put the private key in this file):
+#   npx wrangler secret put IMAGEKIT_PRIVATE_KEY
+#
+# Then deploy:
+#   npx wrangler deploy
+
+name = "imagekit-auth"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+# Tighten this to the origin your editor is served from, e.g.
+# ALLOWED_ORIGIN = "https://editor.example.com"
+ALLOWED_ORIGIN = "*"
