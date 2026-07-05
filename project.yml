@@ -1,0 +1,37 @@
+# XcodeGen specification — run `xcodegen generate` to produce HTMLEditor.xcodeproj
+# with a proper .app bundle (recommended for distribution builds).
+name: HTMLEditor
+options:
+  bundleIdPrefix: com.badyan
+  deploymentTarget:
+    macOS: "13.0"
+  createIntermediateGroups: true
+
+targets:
+  HTMLEditor:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/HTMLEditor
+    info:
+      path: Generated/Info.plist
+      properties:
+        CFBundleName: HTML Editor
+        CFBundleDisplayName: HTML Editor
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        LSMinimumSystemVersion: "13.0"
+        NSPrincipalClass: NSApplication
+        NSHumanReadableCopyright: "© 2026"
+        NSSupportsAutomaticTermination: false
+        NSSupportsSuddenTermination: false
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        PRODUCT_BUNDLE_IDENTIFIER: com.badyan.htmleditor
+        ENABLE_HARDENED_RUNTIME: YES
+        # The editor reads/writes arbitrary user-chosen folders; sandbox is
+        # intentionally off for the developer build. Enable + add entitlements
+        # (user-selected file r/w, security-scoped bookmarks) for App Store.
+        ENABLE_APP_SANDBOX: NO
+        CODE_SIGN_STYLE: Automatic
