@@ -2316,8 +2316,14 @@
     }
 
     function emailImgTag(rawUrl, name) {
-      const alt = (name || '').replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ');
-      return `<img src="${emailURL(rawUrl, name)}" width="600" alt="${alt}" style="display:block;width:100%;max-width:600px;height:auto;border:0;">`;
+      // Escape the filename-derived alt so a quote in an asset name can't
+      // break out of the attribute in the generated email markup.
+      const alt = (name || '')
+        .replace(/\.[a-z0-9]+$/i, '')
+        .replace(/[-_]+/g, ' ')
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+      const src = emailURL(rawUrl, name).replace(/"/g, '%22');
+      return `<img src="${src}" width="600" alt="${alt}" style="display:block;width:100%;max-width:600px;height:auto;border:0;">`;
     }
 
     async function copyText(text) {
