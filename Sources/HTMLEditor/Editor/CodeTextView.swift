@@ -39,6 +39,74 @@ final class CodeTextView: NSTextView {
         super.cancelOperation(sender)
     }
 
+    // MARK: - Multiple cursors
+
+    /// ⌘-click adds an extra insertion point (NSTextView edits all selected
+    /// ranges natively).
+    override func mouseDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.command), event.clickCount == 1 {
+            let point = convert(event.locationInWindow, from: nil)
+            let index = characterIndexForInsertion(at: point)
+            var ranges = selectedRanges.map(\.rangeValue)
+            let caret = NSRange(location: index, length: 0)
+            if !ranges.contains(caret) {
+                ranges.append(caret)
+                setSelectedRanges(
+                    ranges.map { NSValue(range: $0) },
+                    affinity: .downstream,
+                    stillSelecting: false
+                )
+            }
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
+    /// ⌘D — selects the word under the caret, then adds the next occurrence
+    /// of the selection on each further press (VS Code style).
+    func selectNextOccurrence() {
+        let ns = string as NSString
+        guard ns.length > 0 else { return }
+        var ranges = selectedRanges.map(\.rangeValue)
+        guard let anchor = ranges.last else { return }
+
+        // First press with a bare caret: expand to the word under it.
+        if anchor.length == 0 {
+            let word = selectionRange(
+                forProposedRange: anchor, granularity: .selectByWord
+            )
+            guard word.length > 0 else { return }
+            ranges[ranges.count - 1] = word
+            setSelectedRanges(
+                ranges.map { NSValue(range: $0) },
+                affinity: .downstream,
+                stillSelecting: false
+            )
+            return
+        }
+
+        let needle = ns.substring(with: anchor)
+        let start = NSMaxRange(anchor)
+        var found = NSRange(location: NSNotFound, length: 0)
+        if start < ns.length {
+            found = ns.range(
+                of: needle,
+                range: NSRange(location: start, length: ns.length - start)
+            )
+        }
+        if !found.isValid { // wrap around
+            found = ns.range(of: needle, range: NSRange(location: 0, length: ns.length))
+        }
+        guard found.isValid, !ranges.contains(found) else { return }
+        ranges.append(found)
+        setSelectedRanges(
+            ranges.map { NSValue(range: $0) },
+            affinity: .downstream,
+            stillSelecting: false
+        )
+        scrollRangeToVisible(found)
+    }
+
     // MARK: - Auto indentation
 
     override func insertNewline(_ sender: Any?) {

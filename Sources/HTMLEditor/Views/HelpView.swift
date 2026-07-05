@@ -18,6 +18,8 @@ struct HelpView: View {
         ("⌘W", "Close tab"),
         ("⌘F", "Find & Replace"),
         ("⌘G / ⇧⌘G", "Next / previous match"),
+        ("⌘D", "Select next occurrence (multi-cursor)"),
+        ("⌘-click", "Add another cursor"),
         ("⌘R", "Refresh preview"),
         ("⌥⌘P", "Toggle preview pane"),
         ("⌥⌘B", "Open in browser"),

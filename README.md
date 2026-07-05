@@ -38,6 +38,8 @@ SF Pro / SF Mono typography, and full light/dark/custom theming.
   capture references, match highlighting and a live counter
 - Full native Undo/Redo, smooth scrolling, large-file guard
   (highlighting steps aside above ~4 MB so typing stays instant)
+- Multiple cursors: ⌘-click to add carets, ⌘D to select the word under
+  the caret and then each next occurrence (VS Code style)
 
 **IntelliSense**
 - HTML tag completion (type `<`), attribute suggestions per tag,
@@ -170,14 +172,27 @@ Duplicate it, edit the hex colors, then **Reload Themes**:
 | ⌘S / ⇧⌘S / ⌥⌘S | Save / Save As / Save All |
 | ⌘W | Close tab |
 | ⌘F, ⌘G, ⇧⌘G | Find & replace, next, previous |
+| ⌘D / ⌘-click | Select next occurrence / add cursor |
 | ⌘R | Refresh preview |
 | ⌥⌘P / ⌥⌘B | Toggle preview / open in browser |
 | ⇧⌘C | Copy generated HTML |
 | ⌘+ / ⌘− / ⌘0 | Editor zoom |
 | ⌃⌘F | Full screen |
 
+## Trying it out
+
+Open `Examples/demo-site` (File ▸ Open Folder…) for a small landing page
+with HTML + CSS + JS that shows off live preview, device modes and the
+highlighter.
+
+## Tests
+
+`swift test` runs the unit suite (tokenizer behavior and invariants,
+models, themes, completion catalogs). CI executes it on a macOS runner on
+every push — see the Actions tab.
+
 ## Roadmap
 
-Deliberately not in v1: code folding, minimap and multiple cursors (the
-TextKit 1 architecture supports adding them; folding is the planned first
-addition), plus a Git gutter and Emmet-style abbreviations.
+Deliberately not in v1: code folding and a minimap (the TextKit 1
+architecture supports adding them; folding is the planned first addition),
+plus a Git gutter and Emmet-style abbreviations.

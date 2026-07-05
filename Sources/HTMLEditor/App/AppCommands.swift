@@ -79,6 +79,13 @@ struct AppCommands: Commands {
 
             Button("Find Previous") { workspace.activeEditor?.findPrevious() }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
+
+            Divider()
+
+            Button("Select Next Occurrence") {
+                workspace.activeEditor?.selectNextOccurrence()
+            }
+            .keyboardShortcut("d")
         }
 
         // MARK: View

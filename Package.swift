@@ -17,6 +17,11 @@ let package = Package(
         .executableTarget(
             name: "HTMLEditor",
             path: "Sources/HTMLEditor"
+        ),
+        .testTarget(
+            name: "HTMLEditorTests",
+            dependencies: ["HTMLEditor"],
+            path: "Tests/HTMLEditorTests"
         )
     ]
 )

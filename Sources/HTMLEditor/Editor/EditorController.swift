@@ -22,6 +22,12 @@ final class EditorController: ObservableObject {
     private var lastCaseSensitive = false
     private var lastUseRegex = false
 
+    // MARK: - Multi-cursor
+
+    func selectNextOccurrence() {
+        textView?.selectNextOccurrence()
+    }
+
     // MARK: - Search
 
     func search(_ query: String, caseSensitive: Bool, useRegex: Bool) {

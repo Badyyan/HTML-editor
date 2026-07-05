@@ -22,3 +22,6 @@ jobs:
 
       - name: Build
         run: swift build -c debug
+
+      - name: Test
+        run: swift test
