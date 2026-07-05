@@ -77,8 +77,12 @@ struct CodeEditorView: NSViewRepresentable {
         coordinator.rehighlight()
 
         // Register this editor as the active one for find/replace & status.
-        DispatchQueue.main.async {
-            workspace.register(editor: coordinator.editorController, for: document.id)
+        // Deferred one runloop turn so we never publish during a view update.
+        let editorController = coordinator.editorController
+        let documentID = document.id
+        let workspace = self.workspace
+        Task { @MainActor in
+            workspace.register(editor: editorController, for: documentID)
         }
         return scrollView
     }

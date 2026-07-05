@@ -243,7 +243,7 @@ final class HighlightEngine {
         pending?.cancel()
         let work = DispatchWorkItem { [weak self, weak textView] in
             let tokens = SyntaxHighlighter.tokens(in: snapshot, language: language)
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 guard let self, let textView else { return }
                 guard currentVersion == self.version,
                       let storage = textView.textStorage,

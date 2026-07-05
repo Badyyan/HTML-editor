@@ -1,0 +1,24 @@
+# Compile-checks the app on a real macOS machine on every push.
+# Check the Actions tab on GitHub to see build results and any compiler errors.
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: swift build (macOS)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      - name: Build
+        run: swift build -c debug
