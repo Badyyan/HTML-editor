@@ -616,6 +616,170 @@
   .switch input:checked + .track { background: var(--accent); border-color: var(--accent); }
   .switch input:checked + .track::before { transform: translateX(14px); background: #fff; }
 
+  /* ---------- Builder mode ---------- */
+  .mode-switch {
+    display: flex; background: var(--current-line); border-radius: var(--radius-sm);
+    padding: 2px; margin-right: var(--space-1); flex: none;
+  }
+  .mode-switch button {
+    border: none; background: transparent; color: var(--fg-dim);
+    font-size: 12px; padding: 4px 12px; border-radius: 5px; cursor: pointer;
+  }
+  .mode-switch button.active {
+    background: var(--panel); color: var(--fg); font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  }
+
+  .builder {
+    display: none;
+    grid-template-columns: 250px 1fr 270px;
+    min-height: 0;
+    background: var(--bg);
+  }
+  .builder.active { display: grid; }
+
+  .palette {
+    background: var(--sidebar); border-right: 1px solid var(--border);
+    overflow-y: auto; padding-bottom: 16px;
+  }
+  .palette .sidebar-heading { position: sticky; top: 0; background: var(--sidebar); z-index: 2; }
+  .palette-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 2px 10px 8px;
+  }
+  .pal-item {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 10px 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-md);
+    background: var(--panel); cursor: grab; font-size: 10.5px; color: var(--fg-dim);
+    text-align: center; user-select: none;
+  }
+  .pal-item:hover { border-color: var(--accent); color: var(--fg); }
+  .pal-item svg { width: 18px; height: 18px; color: var(--accent); }
+  .pal-item:active { cursor: grabbing; }
+  .design-fields { padding: 2px 10px 8px; }
+
+  .canvas-wrap {
+    overflow-y: auto; min-height: 0;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px 20px 60px;
+    background:
+      radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0) 0 0 / 16px 16px;
+  }
+  .canvas-toolbar {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 14px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+    padding: 5px 8px; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 5;
+  }
+  .canvas-toolbar .tbtn { height: 26px; }
+  .bcanvas {
+    width: 620px; max-width: 100%; min-height: 320px;
+    background: #f3f4f6; padding: 10px;
+    border-radius: 10px; box-shadow: var(--shadow);
+  }
+  .bcanvas-inner { width: 100%; max-width: 600px; margin: 0 auto; }
+  .canvas-empty {
+    padding: 70px 30px; text-align: center; color: #6b7280; font-size: 13px;
+    border: 2px dashed #cbd2dc; border-radius: 8px; background: #fbfcfe;
+  }
+  .cblock { position: relative; }
+  .cblock::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    border: 1.5px solid transparent; border-radius: 2px;
+  }
+  .cblock:hover::after { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+  .cblock.sel::after { border-color: var(--accent); }
+  .cblock.drop-before::before {
+    content: ""; position: absolute; left: 0; right: 0; top: -2px; height: 3px;
+    background: var(--accent); border-radius: 2px; z-index: 3;
+  }
+  .cblock-controls {
+    position: absolute; top: 4px; right: 4px; z-index: 4;
+    display: none; gap: 2px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 2px; box-shadow: var(--shadow);
+  }
+  .cblock.sel .cblock-controls, .cblock:hover .cblock-controls { display: flex; }
+  .cblock-controls button {
+    width: 22px; height: 22px; border: none; background: transparent; color: var(--fg-dim);
+    border-radius: 4px; cursor: pointer; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cblock-controls button:hover { background: var(--selection); color: var(--fg); }
+
+  .inspector {
+    background: var(--sidebar); border-left: 1px solid var(--border);
+    overflow-y: auto; padding: 0 12px 20px;
+  }
+  .inspector .sidebar-heading { padding-left: 0; padding-right: 0; }
+  .inspector-empty { font-size: 12px; color: var(--fg-dim); line-height: 1.5; padding-top: 6px; }
+  .insp-field { margin-bottom: 2px; }
+  .insp-field textarea.field-input { min-height: 74px; resize: vertical; font-family: var(--ui-font); }
+  .insp-row { display: flex; gap: 8px; }
+  .insp-row .insp-field { flex: 1; min-width: 0; }
+  input[type="color"].field-input { padding: 2px 4px; height: 32px; cursor: pointer; }
+  .insp-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .insp-actions button {
+    flex: 1; min-width: 100px;
+    background: var(--current-line); border: 1px solid var(--border); color: var(--fg);
+    padding: 6px 8px; border-radius: var(--radius-sm); font-size: 11.5px; cursor: pointer;
+  }
+  .insp-actions button:hover { border-color: var(--accent); }
+  .insp-actions button.danger { color: var(--danger); }
+
+  /* ---------- Template library & UTM modals ---------- */
+  .modal.wide { width: min(760px, 94vw); }
+  .tpl-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px; margin-top: 6px;
+  }
+  .tpl-card {
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    overflow: hidden; cursor: pointer; background: var(--current-line);
+  }
+  .tpl-card:hover { border-color: var(--accent); }
+  .tpl-thumb {
+    height: 150px; overflow: hidden; position: relative; background: #f3f4f6; pointer-events: none;
+  }
+  .tpl-thumb iframe {
+    width: 640px; height: 600px; border: 0;
+    transform: scale(0.25); transform-origin: 0 0;
+  }
+  .tpl-meta { display: flex; align-items: center; gap: 6px; padding: 7px 9px; }
+  .tpl-name { font-size: 11.5px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tpl-del {
+    border: none; background: transparent; color: var(--fg-dim); cursor: pointer;
+    width: 18px; height: 18px; border-radius: 4px; flex: none;
+  }
+  .tpl-del:hover { color: var(--danger); background: var(--current-line); }
+  .tpl-section-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--fg-dim); margin: 16px 0 8px;
+  }
+
+  .utm-result {
+    margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-sm);
+    background: var(--current-line); border: 1px solid var(--border);
+    font-family: var(--code-font); font-size: 11.5px; word-break: break-all;
+    line-height: 1.5; min-height: 38px;
+  }
+  .utm-result.invalid { border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
+  .utm-issues { margin: 8px 0 0; padding: 0 0 0 16px; font-size: 11.5px; color: var(--warn); }
+  .utm-issues li { margin: 2px 0; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip {
+    border: 1px solid var(--border); background: var(--current-line); color: var(--fg);
+    font-size: 11px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip .x { color: var(--fg-dim); margin-left: 4px; }
+  .utm-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .utm-history { margin-top: 14px; }
+  .utm-history .item {
+    font-family: var(--code-font); font-size: 10.5px; color: var(--fg-dim);
+    padding: 4px 6px; border-radius: 4px; cursor: pointer;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .utm-history .item:hover { background: var(--current-line); color: var(--fg); }
+
   /* ---------- Email assets panel ---------- */
   .assets-empty {
     padding: 8px 10px; font-size: 12px; color: var(--fg-dim); line-height: 1.5;
@@ -702,6 +866,19 @@
 <div id="app">
   <div class="toolbar">
     <div class="brand"><span class="dot"></span>Aurora Editor</div>
+    <div class="mode-switch" role="tablist" aria-label="Editor mode">
+      <button id="mode-code" class="active" role="tab" aria-selected="true">Code</button>
+      <button id="mode-builder" role="tab" aria-selected="false">Builder</button>
+    </div>
+    <button class="tbtn" id="btn-templates" title="Template Library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+      <span class="label">Templates</span>
+    </button>
+    <button class="tbtn" id="btn-utm" title="UTM Builder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 14a5 5 0 007.1 0l2.4-2.4a5 5 0 00-7.1-7.1L11 5.9"/><path d="M14 10a5 5 0 00-7.1 0l-2.4 2.4a5 5 0 007.1 7.1L13 18.1"/></svg>
+      <span class="label">UTM</span>
+    </button>
+    <div class="toolbar-sep"></div>
     <button class="tbtn" id="btn-open-file" title="Open file (⌘O)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>
       <span class="label">Open</span>
@@ -826,6 +1003,38 @@
     </div>
   </div>
 
+  <div class="builder" id="builder">
+    <div class="palette">
+      <div class="sidebar-heading">Content Blocks</div>
+      <div class="palette-grid" id="palette-grid"></div>
+      <div class="sidebar-heading" id="myblocks-heading" style="display:none;">My Blocks</div>
+      <div class="palette-grid" id="myblocks-grid"></div>
+      <div class="sidebar-heading">Design Settings</div>
+      <div class="design-fields" id="design-fields"></div>
+    </div>
+    <div class="canvas-wrap" id="canvas-wrap">
+      <div class="canvas-toolbar">
+        <button class="tbtn" id="btn-save-template" title="Save current design to the Template Library">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h11l3 3v13H5V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>
+          <span class="label">Save template</span>
+        </button>
+        <button class="tbtn" id="btn-export-code" title="Generate email HTML and open it in the Code editor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4l-5 8 5 8M16 4l5 8-5 8"/></svg>
+          <span class="label">Open in Code</span>
+        </button>
+        <button class="tbtn" id="btn-builder-clear" title="Start a blank design">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg>
+          <span class="label">Clear</span>
+        </button>
+      </div>
+      <div class="bcanvas" id="bcanvas"><div class="bcanvas-inner" id="bcanvas-inner"></div></div>
+    </div>
+    <div class="inspector" id="inspector">
+      <div class="sidebar-heading">Block Settings</div>
+      <div class="inspector-empty">Select a block on the canvas to edit it — or drag blocks in from the left panel.</div>
+    </div>
+  </div>
+
   <div class="statusbar">
     <span id="status-lang">HTML</span>
     <span>UTF-8</span>
@@ -887,6 +1096,70 @@
         <label class="switch"><input type="checkbox" id="setting-livepreview"><span class="track"></span></label>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="templates-backdrop">
+  <div class="modal wide">
+    <h2>📚 Template Library</h2>
+    <p class="sub">Load a starting point or reuse a saved design. Templates keep their blocks fully editable in the Builder.</p>
+    <div class="tpl-section-label">Starter templates</div>
+    <div class="tpl-grid" id="tpl-starters"></div>
+    <div class="tpl-section-label">My templates</div>
+    <div class="tpl-grid" id="tpl-mine"></div>
+    <div class="inspector-empty" id="tpl-mine-empty" style="margin-top:4px;">
+      Nothing saved yet — build something, then use “Save template”.
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="utm-backdrop">
+  <div class="modal">
+    <h2>🔗 UTM Builder</h2>
+    <p class="sub">Generate consistently structured campaign URLs. Values are lowercased and spaces become dashes so reports stay clean.</p>
+
+    <label class="field-label" for="utm-url">Destination URL</label>
+    <input class="field-input" id="utm-url" placeholder="https://salla.sa/pricing" spellcheck="false">
+
+    <div class="insp-row">
+      <div class="insp-field" style="flex:1;">
+        <label class="field-label" for="utm-source">Source (utm_source)</label>
+        <input class="field-input" id="utm-source" placeholder="newsletter" spellcheck="false">
+      </div>
+      <div class="insp-field" style="flex:1;">
+        <label class="field-label" for="utm-medium">Medium (utm_medium)</label>
+        <input class="field-input" id="utm-medium" placeholder="email" spellcheck="false">
+      </div>
+    </div>
+    <div class="chip-row" id="utm-quick-chips"></div>
+
+    <label class="field-label" for="utm-campaign">Campaign (utm_campaign)</label>
+    <input class="field-input" id="utm-campaign" placeholder="spring-sale-2026" spellcheck="false">
+
+    <div class="insp-row">
+      <div class="insp-field">
+        <label class="field-label" for="utm-term">Term (optional)</label>
+        <input class="field-input" id="utm-term" spellcheck="false">
+      </div>
+      <div class="insp-field">
+        <label class="field-label" for="utm-content">Content (optional)</label>
+        <input class="field-input" id="utm-content" placeholder="hero-button" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="utm-result" id="utm-result">Fill in the fields above to generate a URL.</div>
+    <ul class="utm-issues" id="utm-issues"></ul>
+
+    <div class="utm-actions">
+      <button class="primary-btn" id="utm-copy" style="margin-top:0;">Copy URL</button>
+      <button class="primary-btn" id="utm-insert" style="margin-top:0;background:var(--current-line);color:var(--fg);border:1px solid var(--border);">Insert as link</button>
+      <button class="primary-btn" id="utm-save-preset" style="margin-top:0;background:var(--current-line);color:var(--fg);border:1px solid var(--border);">Save as preset</button>
+    </div>
+
+    <div class="tpl-section-label" style="margin-top:18px;">Campaign presets</div>
+    <div class="chip-row" id="utm-presets"></div>
+
+    <div class="utm-history" id="utm-history"></div>
   </div>
 </div>
 
@@ -2286,6 +2559,839 @@
   $('#status-zoom-out').addEventListener('click', () => { settings.zoom = Math.max(0.5, settings.zoom - 0.1); persistSettings(); applyFont(); });
 
   /* =========================================================
+     Drag-and-drop Email Builder + Template Library
+     Blocks are plain JSON ({type, props}); each type declares its
+     inspector fields and renders email-safe, table-based HTML with
+     inline styles. The canvas shows exactly what will be exported.
+  ========================================================= */
+  const builder = (() => {
+    const attr = s => String(s ?? '')
+      .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const esc = s => escapeHtml(String(s ?? ''));
+    const nl2br = s => esc(s).replace(/\n/g, '<br>');
+
+    function placeholder(w, h, label) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#6e7bff"/><stop offset="1" stop-color="#35d0a0"/></linearGradient></defs>
+        <rect width="100%" height="100%" rx="6" fill="url(#g)" opacity="0.85"/>
+        <text x="50%" y="52%" fill="#fff" font-family="sans-serif" font-size="15"
+          text-anchor="middle" dominant-baseline="middle">${label}</text></svg>`;
+      return 'data:image/svg+xml,' + encodeURIComponent(svg.replace(/\s+/g, ' '));
+    }
+
+    const btnHtml = (p) =>
+      `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${attr(p.align || 'center')}"><tr>
+        <td style="background:${attr(p.btnBg || '#6e7bff')};border-radius:${Number(p.btnRadius ?? 8)}px;">
+        <a href="${attr(p.btnUrl || '#')}" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${attr(p.btnColor || '#ffffff')};text-decoration:none;">${esc(p.btnLabel || 'Button')}</a>
+        </td></tr></table>`;
+
+    const wrap = (inner, pad, bg) =>
+      `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"${bg ? ` bgcolor="${attr(bg)}"` : ''}><tr><td style="padding:${pad};">${inner}</td></tr></table>`;
+
+    /* ---- Block registry ---- */
+    const TYPES = {
+      header: {
+        label: 'Header', icon: 'M4 6h16M4 12h10',
+        defaults: { brand: 'Your Brand', logoUrl: '', bg: '#ffffff', color: '#111827' },
+        fields: [
+          { k: 'logoUrl', label: 'Logo image URL (optional)', t: 'text' },
+          { k: 'brand', label: 'Brand name', t: 'text' },
+          { k: 'bg', label: 'Background', t: 'color' },
+          { k: 'color', label: 'Text color', t: 'color' }
+        ],
+        render: p => wrap(
+          p.logoUrl
+            ? `<img src="${attr(p.logoUrl)}" alt="${attr(p.brand)}" height="34" style="display:block;height:34px;">`
+            : `<div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;color:${attr(p.color)};">${esc(p.brand)}</div>`,
+          '20px 28px', p.bg)
+      },
+      hero: {
+        label: 'Hero', icon: 'M4 5h16v9H4zM8 18h8',
+        defaults: {
+          imageUrl: placeholder(600, 240, 'Hero image'), headline: 'Big announcement',
+          sub: 'A short supporting sentence that sells the click.',
+          btnLabel: 'Get started', btnUrl: 'https://', btnBg: '#6e7bff', btnColor: '#ffffff',
+          btnRadius: 8, bg: '#ffffff', color: '#111827', align: 'center'
+        },
+        fields: [
+          { k: 'imageUrl', label: 'Image URL', t: 'text' },
+          { k: 'headline', label: 'Headline', t: 'text' },
+          { k: 'sub', label: 'Subtext', t: 'textarea' },
+          { k: 'btnLabel', label: 'Button label', t: 'text' },
+          { k: 'btnUrl', label: 'Button URL', t: 'text' },
+          { k: 'btnBg', label: 'Button color', t: 'color' },
+          { k: 'bg', label: 'Background', t: 'color' },
+          { k: 'color', label: 'Text color', t: 'color' }
+        ],
+        render: p => wrap(
+          `${p.imageUrl ? `<img src="${attr(p.imageUrl)}" width="544" alt="" style="display:block;width:100%;height:auto;border-radius:8px;">` : ''}
+          <div style="font-family:Arial,Helvetica,sans-serif;text-align:${attr(p.align)};padding-top:22px;">
+            <div style="font-size:26px;font-weight:bold;line-height:1.25;color:${attr(p.color)};">${esc(p.headline)}</div>
+            <div style="font-size:14px;line-height:1.6;color:${attr(p.color)};opacity:0.75;padding:10px 8% 20px;">${nl2br(p.sub)}</div>
+            ${btnHtml(p)}
+          </div>`, '28px', p.bg)
+      },
+      text: {
+        label: 'Text', icon: 'M4 7h16M4 12h16M4 17h10',
+        defaults: { content: 'Write your paragraph here. Keep it short — people scan emails, they rarely read them.', size: 14, color: '#374151', align: 'left', bg: '#ffffff' },
+        fields: [
+          { k: 'content', label: 'Text', t: 'textarea' },
+          { k: 'size', label: 'Font size (px)', t: 'number' },
+          { k: 'align', label: 'Align', t: 'select', options: ['left', 'center', 'right'] },
+          { k: 'color', label: 'Text color', t: 'color' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(
+          `<div style="font-family:Arial,Helvetica,sans-serif;font-size:${Number(p.size) || 14}px;line-height:1.65;color:${attr(p.color)};text-align:${attr(p.align)};">${nl2br(p.content)}</div>`,
+          '16px 28px', p.bg)
+      },
+      button: {
+        label: 'Button', icon: 'M5 9h14v6H5z',
+        defaults: { btnLabel: 'Shop now', btnUrl: 'https://', btnBg: '#6e7bff', btnColor: '#ffffff', btnRadius: 8, align: 'center', bg: '#ffffff' },
+        fields: [
+          { k: 'btnLabel', label: 'Label', t: 'text' },
+          { k: 'btnUrl', label: 'URL', t: 'text' },
+          { k: 'btnBg', label: 'Button color', t: 'color' },
+          { k: 'btnColor', label: 'Label color', t: 'color' },
+          { k: 'btnRadius', label: 'Corner radius', t: 'number' },
+          { k: 'align', label: 'Align', t: 'select', options: ['left', 'center', 'right'] },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(btnHtml(p), '14px 28px', p.bg)
+      },
+      image: {
+        label: 'Image', icon: 'M4 5h16v14H4zM8 11l3 3 5-5',
+        defaults: { imageUrl: placeholder(600, 200, 'Image'), alt: '', link: '', bg: '#ffffff' },
+        fields: [
+          { k: 'imageUrl', label: 'Image URL', t: 'text' },
+          { k: 'alt', label: 'Alt text', t: 'text' },
+          { k: 'link', label: 'Link URL (optional)', t: 'text' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => {
+          const img = `<img src="${attr(p.imageUrl)}" width="544" alt="${attr(p.alt)}" style="display:block;width:100%;height:auto;border-radius:6px;">`;
+          return wrap(p.link ? `<a href="${attr(p.link)}">${img}</a>` : img, '14px 28px', p.bg);
+        }
+      },
+      product: {
+        label: 'Product', icon: 'M5 8h14l-1 11H6zM9 8V6a3 3 0 016 0v2',
+        defaults: {
+          imageUrl: placeholder(260, 200, 'Product'), title: 'Product name', price: '$49',
+          desc: 'One line about why this product is great.',
+          btnLabel: 'View product', btnUrl: 'https://', btnBg: '#111827', btnColor: '#ffffff', btnRadius: 6, bg: '#ffffff'
+        },
+        fields: [
+          { k: 'imageUrl', label: 'Image URL', t: 'text' },
+          { k: 'title', label: 'Title', t: 'text' },
+          { k: 'price', label: 'Price', t: 'text' },
+          { k: 'desc', label: 'Description', t: 'textarea' },
+          { k: 'btnLabel', label: 'Button label', t: 'text' },
+          { k: 'btnUrl', label: 'Button URL', t: 'text' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(
+          `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td width="42%" style="vertical-align:top;"><img src="${attr(p.imageUrl)}" width="220" alt="${attr(p.title)}" style="display:block;width:100%;height:auto;border-radius:8px;"></td>
+            <td width="4%"></td>
+            <td style="vertical-align:top;font-family:Arial,Helvetica,sans-serif;">
+              <div style="font-size:16px;font-weight:bold;color:#111827;">${esc(p.title)}</div>
+              <div style="font-size:15px;color:#6e7bff;font-weight:bold;padding:4px 0 8px;">${esc(p.price)}</div>
+              <div style="font-size:13px;line-height:1.55;color:#4b5563;padding-bottom:14px;">${nl2br(p.desc)}</div>
+              ${btnHtml({ ...p, align: 'left' })}
+            </td></tr></table>`, '18px 28px', p.bg)
+      },
+      columns: {
+        label: '2 Columns', icon: 'M4 5h7v14H4zM13 5h7v14h-7z',
+        defaults: {
+          leftTitle: 'Left column', leftText: 'Short text for the left side.',
+          rightTitle: 'Right column', rightText: 'Short text for the right side.', bg: '#ffffff'
+        },
+        fields: [
+          { k: 'leftTitle', label: 'Left title', t: 'text' },
+          { k: 'leftText', label: 'Left text', t: 'textarea' },
+          { k: 'rightTitle', label: 'Right title', t: 'text' },
+          { k: 'rightText', label: 'Right text', t: 'textarea' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(
+          `<div style="text-align:center;font-size:0;">
+            ${[['leftTitle', 'leftText'], ['rightTitle', 'rightText']].map(([t, x]) =>
+              `<div class="stack" style="display:inline-block;width:49%;min-width:200px;vertical-align:top;text-align:left;font-family:Arial,Helvetica,sans-serif;">
+                <div style="padding:6px 10px;">
+                  <div style="font-size:15px;font-weight:bold;color:#111827;padding-bottom:6px;">${esc(p[t])}</div>
+                  <div style="font-size:13px;line-height:1.55;color:#4b5563;">${nl2br(p[x])}</div>
+                </div></div>`).join('')}
+          </div>`, '14px 20px', p.bg)
+      },
+      divider: {
+        label: 'Divider', icon: 'M4 12h16',
+        defaults: { color: '#e5e7eb', thickness: 1, bg: '#ffffff' },
+        fields: [
+          { k: 'color', label: 'Line color', t: 'color' },
+          { k: 'thickness', label: 'Thickness (px)', t: 'number' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(
+          `<div style="border-top:${Number(p.thickness) || 1}px solid ${attr(p.color)};line-height:1px;font-size:1px;">&nbsp;</div>`,
+          '10px 28px', p.bg)
+      },
+      spacer: {
+        label: 'Spacer', icon: 'M12 4v16M8 7l4-3 4 3M8 17l4 3 4-3',
+        defaults: { height: 28, bg: '#ffffff' },
+        fields: [
+          { k: 'height', label: 'Height (px)', t: 'number' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"${p.bg ? ` bgcolor="${attr(p.bg)}"` : ''}><tr><td style="height:${Number(p.height) || 28}px;line-height:${Number(p.height) || 28}px;font-size:1px;">&nbsp;</td></tr></table>`
+      },
+      social: {
+        label: 'Social', icon: 'M8 12a3 3 0 106 0 3 3 0 00-6 0M4 6h.01M20 6h.01M4 18h.01M20 18h.01',
+        defaults: {
+          networks: 'Instagram, X, Facebook, YouTube', baseUrl: 'https://instagram.com/yourbrand',
+          pillBg: '#eef0ff', pillColor: '#4b5563', bg: '#ffffff'
+        },
+        fields: [
+          { k: 'networks', label: 'Networks (comma separated)', t: 'text' },
+          { k: 'pillBg', label: 'Pill background', t: 'color' },
+          { k: 'pillColor', label: 'Pill text', t: 'color' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(
+          `<div style="text-align:center;font-family:Arial,Helvetica,sans-serif;">
+            ${String(p.networks || '').split(',').map(s => s.trim()).filter(Boolean).map(n =>
+              `<a href="#" style="display:inline-block;margin:0 4px 6px;padding:7px 14px;border-radius:999px;background:${attr(p.pillBg)};color:${attr(p.pillColor)};font-size:12px;text-decoration:none;">${esc(n)}</a>`
+            ).join('')}
+          </div>`, '14px 28px', p.bg)
+      },
+      footer: {
+        label: 'Footer', icon: 'M4 15h16M7 19h10',
+        defaults: {
+          company: 'Your Company Inc.', address: '123 Market St, Riyadh',
+          note: 'You received this email because you signed up on our website.',
+          unsubUrl: '#', bg: '#f3f4f6', color: '#6b7280'
+        },
+        fields: [
+          { k: 'company', label: 'Company', t: 'text' },
+          { k: 'address', label: 'Address', t: 'text' },
+          { k: 'note', label: 'Permission note', t: 'textarea' },
+          { k: 'unsubUrl', label: 'Unsubscribe URL', t: 'text' },
+          { k: 'bg', label: 'Background', t: 'color' },
+          { k: 'color', label: 'Text color', t: 'color' }
+        ],
+        render: p => wrap(
+          `<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${attr(p.color)};text-align:center;">
+            <b>${esc(p.company)}</b><br>${esc(p.address)}<br>${nl2br(p.note)}<br>
+            <a href="${attr(p.unsubUrl)}" style="color:${attr(p.color)};text-decoration:underline;">Unsubscribe</a> ·
+            <a href="#" style="color:${attr(p.color)};text-decoration:underline;">View in browser</a>
+          </div>`, '24px 28px', p.bg)
+      }
+    };
+
+    /* ---- State ---- */
+    const store0 = loadStore();
+    let design = store0.builderDesign || blankDesign();
+    let myBlocks = store0.myBlocks || [];
+    let templates = store0.templates || [];
+    let selectedId = null;
+    let active = false;
+
+    function blankDesign() {
+      return { dir: 'ltr', pageBg: '#f3f4f6', preheader: '', blocks: [] };
+    }
+    function persist() {
+      saveStore({ builderDesign: design, myBlocks, templates });
+    }
+    function makeBlock(type, props) {
+      return { id: uid(), type, props: Object.assign({}, TYPES[type].defaults, props || {}) };
+    }
+    function renderBlock(b) {
+      return TYPES[b.type] ? TYPES[b.type].render(b.props) : '';
+    }
+
+    /* ---- Full email document generation ---- */
+    function buildEmailHTML(d) {
+      const rows = d.blocks.map(b => `<tr><td>${renderBlock(b)}</td></tr>`).join('\n');
+      return `<!DOCTYPE html>
+<html lang="en" dir="${attr(d.dir)}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Email</title>
+<style>
+  body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
+  img { border: 0; outline: none; }
+  @media (max-width: 620px) {
+    .container { width: 100% !important; }
+    .stack { display: block !important; width: 100% !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:${attr(d.pageBg)};">
+${d.preheader ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${esc(d.preheader)}</div>` : ''}
+<center>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${attr(d.pageBg)}">
+<tr><td align="center" style="padding:24px 10px;">
+<table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+${rows}
+</table>
+</td></tr>
+</table>
+</center>
+</body>
+</html>`;
+    }
+
+    /* ---- Canvas ---- */
+    function renderCanvas() {
+      const inner = $('#bcanvas-inner');
+      inner.innerHTML = '';
+      $('#bcanvas').style.background = design.pageBg;
+
+      if (!design.blocks.length) {
+        const empty = document.createElement('div');
+        empty.className = 'canvas-empty';
+        empty.textContent = 'Drag blocks here from the left panel — or just click a block to add it.';
+        inner.appendChild(empty);
+        return;
+      }
+      design.blocks.forEach((b) => {
+        const el = document.createElement('div');
+        el.className = 'cblock' + (b.id === selectedId ? ' sel' : '');
+        el.dataset.id = b.id;
+        el.draggable = true;
+        el.innerHTML = renderBlock(b) + `
+          <div class="cblock-controls">
+            <button data-act="up" title="Move up">↑</button>
+            <button data-act="down" title="Move down">↓</button>
+            <button data-act="dup" title="Duplicate">⧉</button>
+            <button data-act="save" title="Save to My Blocks">★</button>
+            <button data-act="del" title="Delete">✕</button>
+          </div>`;
+        el.addEventListener('click', (e) => {
+          const act = e.target.closest('[data-act]')?.dataset.act;
+          if (act) { e.stopPropagation(); blockAction(b.id, act); return; }
+          select(b.id);
+        });
+        el.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/reorder', b.id);
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        el.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          el.classList.add('drop-before');
+        });
+        el.addEventListener('dragleave', () => el.classList.remove('drop-before'));
+        el.addEventListener('drop', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          el.classList.remove('drop-before');
+          handleDropOn(b.id, e.dataTransfer);
+        });
+        // Neutralize links/inputs inside the preview.
+        el.querySelectorAll('a').forEach(a => a.addEventListener('click', ev => ev.preventDefault()));
+        inner.appendChild(el);
+      });
+    }
+
+    function handleDropOn(beforeId, dt) {
+      const reorderId = dt.getData('text/reorder');
+      const paletteType = dt.getData('text/block-type');
+      const myBlockId = dt.getData('text/my-block');
+      const at = design.blocks.findIndex(x => x.id === beforeId);
+      if (reorderId && reorderId !== beforeId) {
+        const from = design.blocks.findIndex(x => x.id === reorderId);
+        if (from === -1 || at === -1) return;
+        const [moved] = design.blocks.splice(from, 1);
+        const to = design.blocks.findIndex(x => x.id === beforeId);
+        design.blocks.splice(to, 0, moved);
+      } else if (paletteType) {
+        design.blocks.splice(at, 0, makeBlock(paletteType));
+        selectedId = design.blocks[at].id;
+      } else if (myBlockId) {
+        const mb = myBlocks.find(x => x.id === myBlockId);
+        if (mb) {
+          design.blocks.splice(at, 0, makeBlock(mb.type, mb.props));
+          selectedId = design.blocks[at].id;
+        }
+      } else return;
+      commit();
+    }
+
+    function blockAction(id, act) {
+      const i = design.blocks.findIndex(x => x.id === id);
+      if (i === -1) return;
+      if (act === 'up' && i > 0) {
+        [design.blocks[i - 1], design.blocks[i]] = [design.blocks[i], design.blocks[i - 1]];
+      } else if (act === 'down' && i < design.blocks.length - 1) {
+        [design.blocks[i + 1], design.blocks[i]] = [design.blocks[i], design.blocks[i + 1]];
+      } else if (act === 'dup') {
+        const copy = makeBlock(design.blocks[i].type, design.blocks[i].props);
+        design.blocks.splice(i + 1, 0, copy);
+        selectedId = copy.id;
+      } else if (act === 'del') {
+        design.blocks.splice(i, 1);
+        if (selectedId === id) selectedId = null;
+      } else if (act === 'save') {
+        const name = prompt('Name this block for reuse:', TYPES[design.blocks[i].type].label);
+        if (!name) return;
+        myBlocks.push({ id: uid(), name, type: design.blocks[i].type,
+          props: JSON.parse(JSON.stringify(design.blocks[i].props)) });
+        toast(`“${name}” saved to My Blocks`);
+      }
+      commit();
+    }
+
+    function select(id) {
+      selectedId = id;
+      renderCanvas();
+      renderInspector();
+    }
+
+    function commit() {
+      persist();
+      renderCanvas();
+      renderInspector();
+      renderPalette();
+    }
+
+    /* ---- Palette ---- */
+    function paletteItem(label, iconPath, dragType, dragValue, onAdd) {
+      const el = document.createElement('div');
+      el.className = 'pal-item';
+      el.draggable = true;
+      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="${iconPath}"/></svg><span></span>`;
+      el.querySelector('span').textContent = label;
+      el.title = 'Drag onto the canvas, or click to add at the end';
+      el.addEventListener('dragstart', e => {
+        e.dataTransfer.setData(dragType, dragValue);
+        e.dataTransfer.effectAllowed = 'copy';
+      });
+      el.addEventListener('click', onAdd);
+      return el;
+    }
+
+    function renderPalette() {
+      const grid = $('#palette-grid');
+      grid.innerHTML = '';
+      for (const [type, def] of Object.entries(TYPES)) {
+        grid.appendChild(paletteItem(def.label, def.icon, 'text/block-type', type, () => {
+          const b = makeBlock(type);
+          design.blocks.push(b);
+          selectedId = b.id;
+          commit();
+        }));
+      }
+      const mineGrid = $('#myblocks-grid');
+      mineGrid.innerHTML = '';
+      $('#myblocks-heading').style.display = myBlocks.length ? '' : 'none';
+      for (const mb of myBlocks) {
+        const item = paletteItem(mb.name, TYPES[mb.type]?.icon || 'M4 4h16v16H4z',
+          'text/my-block', mb.id, () => {
+            const b = makeBlock(mb.type, mb.props);
+            design.blocks.push(b);
+            selectedId = b.id;
+            commit();
+          });
+        item.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          if (confirm(`Remove “${mb.name}” from My Blocks?`)) {
+            myBlocks = myBlocks.filter(x => x.id !== mb.id);
+            commit();
+          }
+        });
+        mineGrid.appendChild(item);
+      }
+      renderDesignFields();
+    }
+
+    /* ---- Field rendering (shared by inspector + design settings) ---- */
+    function fieldEl(field, value, onChange) {
+      const wrapEl = document.createElement('div');
+      wrapEl.className = 'insp-field';
+      const label = document.createElement('label');
+      label.className = 'field-label';
+      label.textContent = field.label;
+      wrapEl.appendChild(label);
+      let input;
+      if (field.t === 'textarea') {
+        input = document.createElement('textarea');
+      } else if (field.t === 'select') {
+        input = document.createElement('select');
+        for (const opt of field.options) {
+          const o = document.createElement('option');
+          o.value = o.textContent = opt;
+          input.appendChild(o);
+        }
+      } else {
+        input = document.createElement('input');
+        input.type = field.t === 'color' ? 'color' : field.t === 'number' ? 'number' : 'text';
+      }
+      input.className = 'field-input';
+      input.value = value ?? '';
+      input.addEventListener('input', () => onChange(input.value));
+      wrapEl.appendChild(input);
+      return wrapEl;
+    }
+
+    function renderInspector() {
+      const host = $('#inspector');
+      host.innerHTML = '<div class="sidebar-heading">Block Settings</div>';
+      const block = design.blocks.find(x => x.id === selectedId);
+      if (!block) {
+        const empty = document.createElement('div');
+        empty.className = 'inspector-empty';
+        empty.textContent = 'Select a block on the canvas to edit it — or drag blocks in from the left panel.';
+        host.appendChild(empty);
+        return;
+      }
+      const def = TYPES[block.type];
+      const title = document.createElement('div');
+      title.className = 'tpl-section-label';
+      title.style.marginTop = '2px';
+      title.textContent = def.label;
+      host.appendChild(title);
+      for (const f of def.fields) {
+        host.appendChild(fieldEl(f, block.props[f.k], v => {
+          block.props[f.k] = v;
+          persist();
+          renderCanvas();
+        }));
+      }
+      const actions = document.createElement('div');
+      actions.className = 'insp-actions';
+      actions.innerHTML = `
+        <button data-a="dup">Duplicate</button>
+        <button data-a="save">Save to My Blocks</button>
+        <button data-a="del" class="danger">Delete block</button>`;
+      actions.addEventListener('click', e => {
+        const a = e.target.closest('[data-a]')?.dataset.a;
+        if (a) blockAction(block.id, a === 'dup' ? 'dup' : a === 'save' ? 'save' : 'del');
+      });
+      host.appendChild(actions);
+    }
+
+    function renderDesignFields() {
+      const host = $('#design-fields');
+      host.innerHTML = '';
+      host.appendChild(fieldEl({ label: 'Direction', t: 'select', options: ['ltr', 'rtl'] },
+        design.dir, v => { design.dir = v; persist(); }));
+      host.appendChild(fieldEl({ label: 'Page background', t: 'color' },
+        design.pageBg, v => { design.pageBg = v; persist(); renderCanvas(); }));
+      host.appendChild(fieldEl({ label: 'Preheader (hidden preview text)', t: 'text' },
+        design.preheader, v => { design.preheader = v; persist(); }));
+    }
+
+    /* ---- Starter templates ---- */
+    function T(type, props) { return makeBlock(type, props); }
+    const STARTERS = [
+      { name: 'Announcement', build: () => [
+        T('header', {}), T('hero', {}), T('text', {}), T('divider', {}), T('footer', {})
+      ]},
+      { name: 'Product promo', build: () => [
+        T('header', {}),
+        T('hero', { headline: 'This week’s picks', sub: 'Hand-selected products your customers will love.', btnLabel: 'Shop the sale' }),
+        T('product', {}),
+        T('divider', {}),
+        T('product', { title: 'Second product', price: '$29' }),
+        T('spacer', {}), T('social', {}), T('footer', {})
+      ]},
+      { name: 'Newsletter', build: () => [
+        T('header', {}),
+        T('text', { content: 'Hi {{first_name}},\n\nHere’s what’s new this month.', size: 15 }),
+        T('image', {}),
+        T('columns', {}),
+        T('button', { btnLabel: 'Read more' }),
+        T('spacer', {}), T('footer', {})
+      ]}
+    ];
+
+    /* ---- Template library ---- */
+    function tplCard(name, designObj, deletable, onLoad, onDelete) {
+      const card = document.createElement('div');
+      card.className = 'tpl-card';
+      card.innerHTML = `
+        <div class="tpl-thumb"><iframe loading="lazy" title="${attr(name)} preview"></iframe></div>
+        <div class="tpl-meta"><span class="tpl-name"></span>${deletable ? '<button class="tpl-del" title="Delete">✕</button>' : ''}</div>`;
+      card.querySelector('.tpl-name').textContent = name;
+      card.querySelector('iframe').srcdoc = buildEmailHTML(designObj);
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.tpl-del')) { e.stopPropagation(); onDelete(); return; }
+        onLoad();
+      });
+      return card;
+    }
+
+    function renderTemplatesModal() {
+      const starters = $('#tpl-starters');
+      starters.innerHTML = '';
+      for (const s of STARTERS) {
+        const d = { ...blankDesign(), blocks: s.build() };
+        starters.appendChild(tplCard(s.name, d, false, () => loadDesign(d, s.name)));
+      }
+      const mine = $('#tpl-mine');
+      mine.innerHTML = '';
+      $('#tpl-mine-empty').style.display = templates.length ? 'none' : '';
+      for (const t of templates) {
+        mine.appendChild(tplCard(t.name, t.design, true,
+          () => loadDesign(JSON.parse(JSON.stringify(t.design)), t.name),
+          () => {
+            if (!confirm(`Delete template “${t.name}”?`)) return;
+            templates = templates.filter(x => x.id !== t.id);
+            persist();
+            renderTemplatesModal();
+          }));
+      }
+    }
+
+    function loadDesign(d, name) {
+      design = d;
+      selectedId = null;
+      persist();
+      $('#templates-backdrop').classList.remove('open');
+      setMode(true);
+      commit();
+      toast(`Loaded “${name}” — it’s all editable`);
+    }
+
+    /* ---- Mode switching ---- */
+    function setMode(builderOn) {
+      active = builderOn;
+      $('#workspace').style.display = builderOn ? 'none' : '';
+      $('#builder').classList.toggle('active', builderOn);
+      $('#mode-code').classList.toggle('active', !builderOn);
+      $('#mode-builder').classList.toggle('active', builderOn);
+      $('#mode-code').setAttribute('aria-selected', String(!builderOn));
+      $('#mode-builder').setAttribute('aria-selected', String(builderOn));
+      if (builderOn) { renderPalette(); renderCanvas(); renderInspector(); }
+    }
+
+    /* ---- Wiring ---- */
+    $('#mode-code').addEventListener('click', () => setMode(false));
+    $('#mode-builder').addEventListener('click', () => setMode(true));
+    $('#btn-templates').addEventListener('click', () => {
+      renderTemplatesModal();
+      $('#templates-backdrop').classList.add('open');
+    });
+    $('#btn-save-template').addEventListener('click', () => {
+      if (!design.blocks.length) { toast('Add some blocks first'); return; }
+      const name = prompt('Template name:', 'My template');
+      if (!name) return;
+      templates.push({ id: uid(), name, design: JSON.parse(JSON.stringify(design)), updated: Date.now() });
+      persist();
+      toast(`Template “${name}” saved`);
+    });
+    $('#btn-export-code').addEventListener('click', () => {
+      if (!design.blocks.length) { toast('Add some blocks first'); return; }
+      const html = buildEmailHTML(design);
+      const id = newFile('email-design.html', html, { dirty: true });
+      setMode(false);
+      openTab(id);
+      toast('Email HTML opened in the Code editor');
+    });
+    $('#btn-builder-clear').addEventListener('click', () => {
+      if (design.blocks.length && !confirm('Clear the current design?')) return;
+      design = blankDesign();
+      selectedId = null;
+      commit();
+    });
+    // Drop onto empty canvas area appends at the end.
+    $('#bcanvas').addEventListener('dragover', e => e.preventDefault());
+    $('#bcanvas').addEventListener('drop', e => {
+      e.preventDefault();
+      const paletteType = e.dataTransfer.getData('text/block-type');
+      const myBlockId = e.dataTransfer.getData('text/my-block');
+      if (paletteType) { design.blocks.push(makeBlock(paletteType)); }
+      else if (myBlockId) {
+        const mb = myBlocks.find(x => x.id === myBlockId);
+        if (mb) design.blocks.push(makeBlock(mb.type, mb.props));
+      } else return;
+      selectedId = design.blocks[design.blocks.length - 1].id;
+      commit();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (!active || !selectedId) return;
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        blockAction(selectedId, 'del');
+      }
+    });
+
+    return { get active() { return active; }, setMode, buildEmailHTML: () => buildEmailHTML(design) };
+  })();
+
+  /* =========================================================
+     UTM Builder — consistent campaign URLs
+  ========================================================= */
+  const utm = (() => {
+    const QUICK = [
+      ['newsletter', 'email'], ['promo', 'email'], ['instagram', 'social'],
+      ['facebook', 'cpc'], ['google', 'cpc'], ['whatsapp', 'messaging']
+    ];
+    let presets = loadStore().utmPresets || [];
+    let history = loadStore().utmHistory || [];
+    let lastUrl = '';
+
+    const clean = v => String(v || '').trim().toLowerCase().replace(/\s+/g, '-');
+
+    function persist() { saveStore({ utmPresets: presets, utmHistory: history.slice(0, 8) }); }
+
+    function read() {
+      return {
+        url: $('#utm-url').value.trim(),
+        source: $('#utm-source').value, medium: $('#utm-medium').value,
+        campaign: $('#utm-campaign').value, term: $('#utm-term').value,
+        content: $('#utm-content').value
+      };
+    }
+
+    function generate() {
+      const v = read();
+      const issues = [];
+      lastUrl = '';
+      if (!v.url) issues.push('Destination URL is required.');
+      let parsed = null;
+      if (v.url) {
+        try { parsed = new URL(/^https?:\/\//i.test(v.url) ? v.url : 'https://' + v.url); }
+        catch { issues.push('Destination URL is not a valid URL.'); }
+      }
+      if (!v.source.trim()) issues.push('utm_source is required (where the traffic comes from).');
+      if (!v.medium.trim()) issues.push('utm_medium is required (e.g. email, social, cpc).');
+      if (!v.campaign.trim()) issues.push('utm_campaign is required (name the campaign).');
+      [['source', v.source], ['medium', v.medium], ['campaign', v.campaign]].forEach(([k, raw]) => {
+        if (raw && raw !== clean(raw)) issues.push(`utm_${k} was normalized to “${clean(raw)}” (lowercase, dashes).`);
+      });
+
+      const result = $('#utm-result');
+      const issuesEl = $('#utm-issues');
+      issuesEl.innerHTML = issues.map(i => `<li>${escapeHtml(i)}</li>`).join('');
+
+      const blocking = !parsed || !v.source.trim() || !v.medium.trim() || !v.campaign.trim();
+      if (blocking) {
+        result.classList.add('invalid');
+        result.textContent = 'Complete the required fields to generate a URL.';
+        return;
+      }
+      // Replace any pre-existing utm_* params so links never double-tag.
+      ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
+        .forEach(k => parsed.searchParams.delete(k));
+      parsed.searchParams.set('utm_source', clean(v.source));
+      parsed.searchParams.set('utm_medium', clean(v.medium));
+      parsed.searchParams.set('utm_campaign', clean(v.campaign));
+      if (v.term.trim()) parsed.searchParams.set('utm_term', clean(v.term));
+      if (v.content.trim()) parsed.searchParams.set('utm_content', clean(v.content));
+      lastUrl = parsed.toString();
+      result.classList.remove('invalid');
+      result.textContent = lastUrl;
+    }
+
+    async function copy() {
+      if (!lastUrl) { toast('Nothing to copy yet'); return; }
+      try { await navigator.clipboard.writeText(lastUrl); }
+      catch {
+        const ta = document.createElement('textarea');
+        ta.value = lastUrl; document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy'); ta.remove();
+      }
+      pushHistory();
+      toast('Tracked URL copied');
+    }
+
+    function pushHistory() {
+      if (!lastUrl) return;
+      history = [lastUrl, ...history.filter(u => u !== lastUrl)].slice(0, 8);
+      persist();
+      renderLists();
+    }
+
+    function renderLists() {
+      const chips = $('#utm-quick-chips');
+      chips.innerHTML = '';
+      for (const [s, m] of QUICK) {
+        const c = document.createElement('button');
+        c.className = 'chip';
+        c.textContent = `${s} / ${m}`;
+        c.addEventListener('click', () => {
+          $('#utm-source').value = s;
+          $('#utm-medium').value = m;
+          generate();
+        });
+        chips.appendChild(c);
+      }
+      const pr = $('#utm-presets');
+      pr.innerHTML = '';
+      if (!presets.length) {
+        pr.innerHTML = '<span class="inspector-empty">No presets yet — fill the form and “Save as preset”.</span>';
+      }
+      for (const p of presets) {
+        const c = document.createElement('button');
+        c.className = 'chip';
+        c.innerHTML = `<span></span><span class="x">✕</span>`;
+        c.querySelector('span').textContent = p.name;
+        c.addEventListener('click', (e) => {
+          if (e.target.classList.contains('x')) {
+            presets = presets.filter(x => x.id !== p.id);
+            persist(); renderLists();
+            return;
+          }
+          $('#utm-url').value = p.url || $('#utm-url').value;
+          $('#utm-source').value = p.source; $('#utm-medium').value = p.medium;
+          $('#utm-campaign').value = p.campaign;
+          $('#utm-term').value = p.term || ''; $('#utm-content').value = p.content || '';
+          generate();
+        });
+        pr.appendChild(c);
+      }
+      const hist = $('#utm-history');
+      hist.innerHTML = history.length ? '<div class="tpl-section-label">Recent URLs</div>' : '';
+      for (const u of history) {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.textContent = u;
+        item.title = 'Click to copy';
+        item.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(u); } catch {}
+          toast('Copied');
+        });
+        hist.appendChild(item);
+      }
+    }
+
+    ['#utm-url', '#utm-source', '#utm-medium', '#utm-campaign', '#utm-term', '#utm-content']
+      .forEach(sel => $(sel).addEventListener('input', generate));
+    $('#utm-copy').addEventListener('click', copy);
+    $('#utm-insert').addEventListener('click', () => {
+      if (!lastUrl) { toast('Generate a URL first'); return; }
+      pushHistory();
+      $('#utm-backdrop').classList.remove('open');
+      if (builder.active) builder.setMode(false);
+      inputEl.focus();
+      insertAtCaret(`<a href="${lastUrl.replace(/"/g, '%22')}" target="_blank">link text</a>`);
+      toast('Tracked link inserted');
+    });
+    $('#utm-save-preset').addEventListener('click', () => {
+      const v = read();
+      if (!v.source.trim() || !v.medium.trim() || !v.campaign.trim()) {
+        toast('Fill source, medium and campaign first');
+        return;
+      }
+      const name = prompt('Preset name:', `${clean(v.campaign)} · ${clean(v.source)}`);
+      if (!name) return;
+      presets.push({ id: uid(), name, ...v });
+      persist(); renderLists();
+      toast(`Preset “${name}” saved`);
+    });
+    $('#btn-utm').addEventListener('click', () => {
+      renderLists(); generate();
+      $('#utm-backdrop').classList.add('open');
+    });
+
+    return { renderLists };
+  })();
+
+  /* =========================================================
      Email Assets — ImageKit uploads + CDN URLs
      The private key never touches this page: uploads are signed by a
      separate auth server (Server/imagekit-auth) and sent with the
@@ -2505,6 +3611,8 @@
         if ($('#help-backdrop').classList.contains('open')) $('#help-backdrop').classList.remove('open');
         else if ($('#settings-backdrop').classList.contains('open')) $('#settings-backdrop').classList.remove('open');
         else if ($('#assets-backdrop').classList.contains('open')) $('#assets-backdrop').classList.remove('open');
+        else if ($('#templates-backdrop').classList.contains('open')) $('#templates-backdrop').classList.remove('open');
+        else if ($('#utm-backdrop').classList.contains('open')) $('#utm-backdrop').classList.remove('open');
         else if ($('#findbar').classList.contains('open') && document.activeElement !== inputEl) closeFindBar();
       }
       return;
