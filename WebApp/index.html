@@ -146,13 +146,18 @@
   body {
     margin: 0;
     font-family: var(--ui-font);
+    font-size: 13px;
+    letter-spacing: -0.006em;      /* subtle optical tightening, SF-like */
     background: var(--bg);
     color: var(--fg);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   button {
     font-family: inherit;
     color: inherit;
+    letter-spacing: inherit;
   }
   ::selection { background: var(--selection); }
 
@@ -162,8 +167,22 @@
 
   :focus-visible {
     outline: 2px solid var(--accent);
-    outline-offset: 1px;
+    outline-offset: 2px;
+    border-radius: 4px;
   }
+
+  /* Shared small icon button — used for inline actions across the app. */
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; flex: none;
+    border: none; background: transparent; color: var(--fg-dim);
+    border-radius: 7px; cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+  }
+  .icon-btn:hover { background: var(--current-line); color: var(--fg); }
+  .icon-btn:active { transform: scale(0.92); }
+  .icon-btn svg { width: 15px; height: 15px; }
+  .icon-btn.danger:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 
   /* ---------- App shell ---------- */
   #app {
@@ -205,29 +224,36 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 28px;
-    padding: 0 10px;
+    height: 29px;
+    padding: 0 11px;
     border: 1px solid transparent;
-    border-radius: var(--radius-sm);
+    border-radius: 8px;
     background: transparent;
     color: var(--fg);
     font-size: 12.5px;
     cursor: pointer;
     white-space: nowrap;
+    -webkit-app-region: no-drag;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   }
   .tbtn:hover { background: var(--current-line); }
-  .tbtn:active { transform: translateY(0.5px); }
+  .tbtn:active { transform: scale(0.96); }
   .tbtn[aria-pressed="true"] { background: var(--selection); border-color: var(--border); }
-  .tbtn.icon-only { padding: 0; width: 28px; justify-content: center; }
+  .tbtn.icon-only { padding: 0; width: 29px; justify-content: center; }
   .tbtn svg { width: 15px; height: 15px; flex: none; }
-  .tbtn .label { }
   .toolbar-spacer { flex: 1; }
   .toolbar-sep {
-    width: 1px; height: 20px; background: var(--border); margin: 0 2px; flex: none;
+    width: 1px; height: 20px; background: var(--border); margin: 0 3px; flex: none;
   }
-  @media (max-width: 880px) {
+  /* Progressive collapse so the toolbar never overflows on narrow windows. */
+  @media (max-width: 1180px) {
     .tbtn .label { display: none; }
-    .tbtn { width: 28px; padding: 0; justify-content: center; }
+    .tbtn { width: 29px; padding: 0; justify-content: center; }
+    .mode-switch button { padding: 4px 10px; }
+  }
+  @media (max-width: 720px) {
+    .toolbar { gap: 4px; padding: 8px 10px; overflow-x: auto; }
+    .toolbar .brand { font-size: 12px; }
   }
 
   /* ---------- Tab strip ---------- */
@@ -275,11 +301,12 @@
     width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex: none;
   }
   .tab .close {
-    width: 15px; height: 15px; border-radius: 4px; border: none; background: transparent;
+    width: 16px; height: 16px; border-radius: 4px; border: none; background: transparent;
     color: inherit; display: flex; align-items: center; justify-content: center; flex: none;
-    opacity: 0; cursor: pointer;
+    opacity: 0; cursor: pointer; transition: opacity 0.15s ease, background 0.15s ease;
   }
-  .tab:hover .close, .tab.active .close { opacity: 0.7; }
+  .tab .close svg { width: 10px; height: 10px; }
+  .tab:hover .close, .tab.active .close { opacity: 0.6; }
   .tab .close:hover { opacity: 1; background: var(--selection); }
   .tab.active .dirty-dot { display: block; }
   .tab:not(.active):not(:hover) .dirty-dot { display: block; }
@@ -294,7 +321,8 @@
   .findbar {
     display: none;
     align-items: center;
-    gap: 8px;
+    flex-wrap: wrap;            /* never overflow — wrap to a second row */
+    gap: 6px 8px;
     padding: 7px 12px;
     background: var(--sidebar);
     border-bottom: 1px solid var(--border);
@@ -307,17 +335,37 @@
     border-radius: var(--radius-sm);
     color: var(--fg);
     font-size: 12px;
-    padding: 5px 8px;
-    width: 220px;
+    padding: 5px 9px;
+    flex: 1 1 150px;
+    min-width: 120px;
+    max-width: 260px;
+    height: 26px;
+    box-sizing: border-box;
   }
-  .findbar input[type="text"]:focus { border-color: var(--accent); }
-  .findbar .count { color: var(--fg-dim); min-width: 70px; font-variant-numeric: tabular-nums; }
+  .findbar input[type="text"]:focus {
+    border-color: var(--accent);
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .findbar .count {
+    color: var(--fg-dim); min-width: 58px; font-variant-numeric: tabular-nums;
+    white-space: nowrap; flex: none;
+  }
+  .find-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .findbar .toggle {
-    width: 24px; height: 24px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    min-width: 26px; height: 26px; padding: 0 7px;
+    border-radius: 7px; border: 1px solid var(--border);
     background: var(--panel); color: var(--fg-dim); font-size: 11px; cursor: pointer;
+    white-space: nowrap; flex: none;
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.1s ease;
   }
-  .findbar .toggle[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
-  .findbar .grow { flex: 1; }
+  .findbar .toggle svg { width: 14px; height: 14px; }
+  .findbar .toggle.text { padding: 0 11px; font-size: 11.5px; }
+  .findbar .toggle:hover { color: var(--fg); border-color: color-mix(in srgb, var(--fg-dim) 50%, transparent); }
+  .findbar .toggle:active { transform: scale(0.94); }
+  .findbar .toggle[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
+  .findbar .grow { flex: 1 0 0; }
 
   /* ---------- Main layout ---------- */
   .workspace {
@@ -378,8 +426,10 @@
   .node .name { overflow: hidden; text-overflow: ellipsis; }
   .node .depth-spacer { flex: none; }
   .node .star {
-    margin-left: auto; opacity: 0; width: 13px; height: 13px; color: var(--warn); flex: none;
+    margin-left: auto; opacity: 0; color: var(--warn); flex: none;
+    display: inline-flex; align-items: center; transition: opacity 0.15s ease;
   }
+  .node .star svg { width: 13px; height: 13px; }
   .node:hover .star, .node.favorited .star { opacity: 1; }
 
   .workspace-divider { background: var(--border); cursor: col-resize; }
@@ -553,27 +603,43 @@
 
   /* ---------- Modal (help / theme) ---------- */
   .modal-backdrop {
-    position: fixed; inset: 0; background: rgba(10, 11, 15, 0.5);
+    position: fixed; inset: 0; background: rgba(10, 11, 15, 0.44);
+    backdrop-filter: blur(6px) saturate(1.1);
     display: none; align-items: center; justify-content: center; z-index: 100;
+    padding: 24px;
   }
-  .modal-backdrop.open { display: flex; }
+  .modal-backdrop.open { display: flex; animation: backdrop-in 0.22s ease; }
+  @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
   .modal {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: var(--shadow);
-    width: min(520px, 92vw);
-    max-height: 82vh;
+    border-radius: 18px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+    width: min(520px, 100%);
+    max-height: 86vh;
     overflow-y: auto;
-    padding: 22px 26px 26px;
+    padding: 24px 26px 26px;
+  }
+  .modal-backdrop.open .modal { animation: modal-in 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
   .modal h2 {
-    font-size: 16px; margin: 0 0 4px;
-    display: flex; align-items: center; gap: 8px;
+    font-size: 17px; font-weight: 600; letter-spacing: -0.01em;
+    margin: 0 0 5px; line-height: 1.3;
+    display: flex; align-items: center; gap: 11px;
   }
-  .modal .sub { color: var(--fg-dim); font-size: 12.5px; margin: 0 0 18px; }
-  .modal .close-x {
-    position: absolute; margin-top: -8px; margin-left: 480px;
+  .modal-ico {
+    flex: none; width: 30px; height: 30px; border-radius: 9px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+  }
+  .modal-ico svg { width: 17px; height: 17px; }
+  .modal .sub {
+    color: var(--fg-dim); font-size: 12.5px; line-height: 1.5;
+    margin: 0 0 20px; letter-spacing: 0;
   }
   .kv-grid {
     display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; font-size: 12.5px;
@@ -692,18 +758,22 @@
     background: var(--accent); border-radius: 2px; z-index: 3;
   }
   .cblock-controls {
-    position: absolute; top: 4px; right: 4px; z-index: 4;
-    display: none; gap: 2px;
-    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
-    padding: 2px; box-shadow: var(--shadow);
+    position: absolute; top: 6px; right: 6px; z-index: 4;
+    display: none; gap: 1px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 9px;
+    padding: 3px; box-shadow: var(--shadow);
   }
   .cblock.sel .cblock-controls, .cblock:hover .cblock-controls { display: flex; }
   .cblock-controls button {
-    width: 22px; height: 22px; border: none; background: transparent; color: var(--fg-dim);
-    border-radius: 4px; cursor: pointer; font-size: 12px;
+    width: 26px; height: 26px; border: none; background: transparent; color: var(--fg-dim);
+    border-radius: 6px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
+    transition: background 0.14s ease, color 0.14s ease, transform 0.1s ease;
   }
-  .cblock-controls button:hover { background: var(--selection); color: var(--fg); }
+  .cblock-controls button svg { width: 14px; height: 14px; }
+  .cblock-controls button:hover { background: var(--current-line); color: var(--fg); }
+  .cblock-controls button:active { transform: scale(0.9); }
+  .cblock-controls button[data-act="del"]:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 
   .inspector {
     background: var(--sidebar); border-left: 1px solid var(--border);
@@ -747,9 +817,12 @@
   .tpl-name { font-size: 11.5px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tpl-del {
     border: none; background: transparent; color: var(--fg-dim); cursor: pointer;
-    width: 18px; height: 18px; border-radius: 4px; flex: none;
+    width: 22px; height: 22px; border-radius: 6px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.14s ease, color 0.14s ease;
   }
-  .tpl-del:hover { color: var(--danger); background: var(--current-line); }
+  .tpl-del svg { width: 13px; height: 13px; }
+  .tpl-del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
   .tpl-section-label {
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
     color: var(--fg-dim); margin: 16px 0 8px;
@@ -764,14 +837,90 @@
   .utm-result.invalid { border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
   .utm-issues { margin: 8px 0 0; padding: 0 0 0 16px; font-size: 11.5px; color: var(--warn); }
   .utm-issues li { margin: 2px 0; }
-  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .chip {
+    display: inline-flex; align-items: center; gap: 5px;
     border: 1px solid var(--border); background: var(--current-line); color: var(--fg);
-    font-size: 11px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    font-size: 11.5px; padding: 4px 11px; border-radius: 999px; cursor: pointer;
+    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: border-color 0.14s ease, background 0.14s ease, transform 0.1s ease;
   }
-  .chip:hover { border-color: var(--accent); }
-  .chip .x { color: var(--fg-dim); margin-left: 4px; }
-  .utm-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .chip:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--current-line)); }
+  .chip:active { transform: scale(0.96); }
+  .chip .pin-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex: none; }
+  .chip .x {
+    color: var(--fg-dim); display: inline-flex; margin-left: 1px; border-radius: 50%;
+  }
+  .chip .x svg { width: 11px; height: 11px; }
+  .chip .x:hover { color: var(--danger); }
+
+  /* Field header with inline Manage button */
+  .field-head { display: flex; align-items: center; justify-content: space-between; margin: 12px 0 4px; }
+  .field-head .field-label { margin: 0; }
+  .manage-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 7px;
+    border: none; background: transparent; color: var(--fg-dim); cursor: pointer;
+    transition: background 0.14s ease, color 0.14s ease, transform 0.3s ease;
+  }
+  .manage-btn svg { width: 15px; height: 15px; }
+  .manage-btn:hover { background: var(--current-line); color: var(--accent); transform: rotate(45deg); }
+
+  /* Segmented tabs (Apple-style) */
+  .seg-tabs {
+    display: flex; gap: 2px; background: var(--current-line); border-radius: 9px;
+    padding: 3px; margin: 4px 0 14px;
+  }
+  .seg-tabs button {
+    flex: 1; border: none; background: transparent; color: var(--fg-dim);
+    font-size: 12.5px; font-weight: 500; padding: 6px 0; border-radius: 7px; cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+  .seg-tabs button.active { background: var(--panel); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+
+  /* Preset manager rows */
+  .preset-list { display: flex; flex-direction: column; gap: 5px; min-height: 40px; }
+  .preset-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--panel); transition: border-color 0.14s ease, box-shadow 0.14s ease, opacity 0.14s ease;
+  }
+  .preset-row.dragging { opacity: 0.4; }
+  .preset-row.drop-target { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .preset-row .drag-handle {
+    flex: none; cursor: grab; color: var(--fg-dim); display: inline-flex; padding: 2px;
+    touch-action: none;
+  }
+  .preset-row .drag-handle:active { cursor: grabbing; }
+  .preset-row .drag-handle svg { width: 15px; height: 15px; }
+  .preset-row .p-value, .preset-row .p-label {
+    border: 1px solid transparent; background: transparent; color: var(--fg);
+    font-size: 12.5px; padding: 4px 7px; border-radius: 6px; min-width: 0;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .preset-row .p-value { flex: 1 1 40%; font-weight: 500; }
+  .preset-row .p-label { flex: 1 1 40%; color: var(--fg-dim); font-size: 11.5px; }
+  .preset-row .p-value:hover, .preset-row .p-label:hover { background: var(--current-line); }
+  .preset-row .p-value:focus, .preset-row .p-label:focus {
+    outline: none; background: var(--bg); border-color: var(--accent);
+  }
+  .preset-row .row-actions { display: flex; gap: 1px; flex: none; }
+  .preset-row .row-actions button {
+    width: 26px; height: 26px; border: none; background: transparent; color: var(--fg-dim);
+    border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.14s ease, color 0.14s ease;
+  }
+  .preset-row .row-actions button svg { width: 14px; height: 14px; }
+  .preset-row .row-actions button:hover { background: var(--current-line); color: var(--fg); }
+  .preset-row .row-actions button.on { color: var(--accent); }
+  .preset-row .row-actions button.star-btn.on { color: var(--warn); }
+  .preset-row .row-actions button.del-btn:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  .preset-empty { font-size: 12px; color: var(--fg-dim); text-align: center; padding: 14px; }
+  .preset-add { display: flex; gap: 6px; margin-top: 12px; }
+  .preset-add .field-input { flex: 1; min-width: 0; }
+  .preset-hint { font-size: 11px; color: var(--fg-dim); margin: 10px 0 0; line-height: 1.5; }
+
+  .utm-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
   .utm-history { margin-top: 14px; }
   .utm-history .item {
     font-family: var(--code-font); font-size: 10.5px; color: var(--fg-dim);
@@ -925,18 +1074,28 @@
     </button>
   </div>
 
-  <div class="findbar" id="findbar">
-    <input type="text" id="find-input" placeholder="Find">
-    <span class="count" id="find-count">No results</span>
-    <button class="toggle" id="find-prev" title="Previous (⇧⌘G)">↑</button>
-    <button class="toggle" id="find-next" title="Next (⌘G)">↓</button>
-    <button class="toggle" id="find-case" title="Case sensitive" aria-pressed="false">Aa</button>
-    <button class="toggle" id="find-regex" title="Regular expression" aria-pressed="false">.*</button>
-    <input type="text" id="replace-input" placeholder="Replace">
-    <button class="toggle" id="replace-one">Replace</button>
-    <button class="toggle" id="replace-all">Replace All</button>
+  <div class="findbar" id="findbar" role="search">
+    <div class="find-group">
+      <input type="text" id="find-input" placeholder="Find" aria-label="Find text">
+      <span class="count" id="find-count">No results</span>
+      <button class="toggle" id="find-prev" title="Previous match (⇧⌘G)" aria-label="Previous match">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 15l6-6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="toggle" id="find-next" title="Next match (⌘G)" aria-label="Next match">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="toggle" id="find-case" title="Case sensitive" aria-pressed="false">Aa</button>
+      <button class="toggle" id="find-regex" title="Regular expression" aria-pressed="false">.*</button>
+    </div>
+    <div class="find-group">
+      <input type="text" id="replace-input" placeholder="Replace" aria-label="Replace with">
+      <button class="toggle text" id="replace-one">Replace</button>
+      <button class="toggle text" id="replace-all">Replace all</button>
+    </div>
     <div class="grow"></div>
-    <button class="toggle" id="find-close" title="Close (Esc)">✕</button>
+    <button class="toggle" id="find-close" title="Close (Esc)" aria-label="Close find bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+    </button>
   </div>
 
   <div class="workspace" id="workspace">
@@ -1054,7 +1213,7 @@
 
 <div class="modal-backdrop" id="help-backdrop">
   <div class="modal">
-    <h2>⌨️ Keyboard Shortcuts</h2>
+    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="6" width="20" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" stroke-linecap="round"/></svg></span> Keyboard Shortcuts</h2>
     <p class="sub">Aurora Editor runs entirely in this browser tab — nothing to install.</p>
     <div class="kv-grid" id="shortcut-grid"></div>
     <ul class="tip-list">
@@ -1068,7 +1227,7 @@
 
 <div class="modal-backdrop" id="settings-backdrop">
   <div class="modal">
-    <h2>🎨 Theme &amp; Settings</h2>
+    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 21v-6M5 11V3M12 21v-9M12 8V3M19 21v-4M19 13V3M2 15h6M9 8h6M16 17h6" stroke-linecap="round"/></svg></span> Theme &amp; Settings</h2>
     <p class="sub">Changes apply immediately and are remembered on this device.</p>
     <div class="theme-grid" id="theme-grid"></div>
     <div style="margin-top:18px;">
@@ -1101,7 +1260,7 @@
 
 <div class="modal-backdrop" id="templates-backdrop">
   <div class="modal wide">
-    <h2>📚 Template Library</h2>
+    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg></span> Template Library</h2>
     <p class="sub">Load a starting point or reuse a saved design. Templates keep their blocks fully editable in the Builder.</p>
     <div class="tpl-section-label">Starter templates</div>
     <div class="tpl-grid" id="tpl-starters"></div>
@@ -1115,7 +1274,7 @@
 
 <div class="modal-backdrop" id="utm-backdrop">
   <div class="modal">
-    <h2>🔗 UTM Builder</h2>
+    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 14a5 5 0 007.1 0l2.4-2.4a5 5 0 00-7.1-7.1L11 5.9" stroke-linecap="round"/><path d="M14 10a5 5 0 00-7.1 0l-2.4 2.4a5 5 0 007.1 7.1L13 18.1" stroke-linecap="round"/></svg></span> UTM Builder</h2>
     <p class="sub">Generate consistently structured campaign URLs. Values are lowercased and spaces become dashes so reports stay clean.</p>
 
     <label class="field-label" for="utm-url">Destination URL</label>
@@ -1123,15 +1282,26 @@
 
     <div class="insp-row">
       <div class="insp-field" style="flex:1;">
-        <label class="field-label" for="utm-source">Source (utm_source)</label>
-        <input class="field-input" id="utm-source" placeholder="newsletter" spellcheck="false">
+        <div class="field-head">
+          <label class="field-label" for="utm-source">Source (utm_source)</label>
+          <button class="manage-btn" id="manage-source" title="Manage source shortcuts" aria-label="Manage source shortcuts">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10.3 4.3a1.2 1.2 0 013.4 0l.2.9a1.2 1.2 0 001.7 1l.8-.4a1.2 1.2 0 011.5 1.9l-.6.7a1.2 1.2 0 000 2l.6.7a1.2 1.2 0 01-1.5 1.9l-.8-.4a1.2 1.2 0 00-1.7 1l-.2.9a1.2 1.2 0 01-3.4 0l-.2-.9a1.2 1.2 0 00-1.7-1l-.8.4a1.2 1.2 0 01-1.5-1.9l.6-.7a1.2 1.2 0 000-2l-.6-.7a1.2 1.2 0 011.5-1.9l.8.4a1.2 1.2 0 001.7-1z"/><circle cx="12" cy="12" r="2.4"/></svg>
+          </button>
+        </div>
+        <input class="field-input" id="utm-source" placeholder="newsletter" spellcheck="false" autocomplete="off">
+        <div class="chip-row" id="utm-source-chips"></div>
       </div>
       <div class="insp-field" style="flex:1;">
-        <label class="field-label" for="utm-medium">Medium (utm_medium)</label>
-        <input class="field-input" id="utm-medium" placeholder="email" spellcheck="false">
+        <div class="field-head">
+          <label class="field-label" for="utm-medium">Medium (utm_medium)</label>
+          <button class="manage-btn" id="manage-medium" title="Manage medium shortcuts" aria-label="Manage medium shortcuts">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10.3 4.3a1.2 1.2 0 013.4 0l.2.9a1.2 1.2 0 001.7 1l.8-.4a1.2 1.2 0 011.5 1.9l-.6.7a1.2 1.2 0 000 2l.6.7a1.2 1.2 0 01-1.5 1.9l-.8-.4a1.2 1.2 0 00-1.7 1l-.2.9a1.2 1.2 0 01-3.4 0l-.2-.9a1.2 1.2 0 00-1.7-1l-.8.4a1.2 1.2 0 01-1.5-1.9l.6-.7a1.2 1.2 0 000-2l-.6-.7a1.2 1.2 0 011.5-1.9l.8.4a1.2 1.2 0 001.7-1z"/><circle cx="12" cy="12" r="2.4"/></svg>
+          </button>
+        </div>
+        <input class="field-input" id="utm-medium" placeholder="email" spellcheck="false" autocomplete="off">
+        <div class="chip-row" id="utm-medium-chips"></div>
       </div>
     </div>
-    <div class="chip-row" id="utm-quick-chips"></div>
 
     <label class="field-label" for="utm-campaign">Campaign (utm_campaign)</label>
     <input class="field-input" id="utm-campaign" placeholder="spring-sale-2026" spellcheck="false">
@@ -1163,9 +1333,30 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="presets-backdrop">
+  <div class="modal">
+    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h11M4 12h16M4 17h9" stroke-linecap="round"/><circle cx="18" cy="7" r="2"/><circle cx="17" cy="17" r="2"/></svg></span> Manage Quick Presets</h2>
+    <p class="sub">Add, edit, pin, and reorder your source &amp; medium shortcuts. Changes save automatically.</p>
+
+    <div class="seg-tabs" id="presets-tabs">
+      <button data-tab="source" class="active">Sources</button>
+      <button data-tab="medium">Mediums</button>
+    </div>
+
+    <div class="preset-list" id="preset-list"></div>
+
+    <div class="preset-add">
+      <input class="field-input" id="preset-add-value" placeholder="value (e.g. tiktok)" spellcheck="false" autocomplete="off">
+      <input class="field-input" id="preset-add-label" placeholder="label (optional)" spellcheck="false" autocomplete="off">
+      <button class="primary-btn" id="preset-add-btn" style="margin-top:0;">Add</button>
+    </div>
+    <p class="preset-hint">Drag the handle to reorder · pin to keep at the top · the starred item pre-fills new URLs.</p>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="assets-backdrop">
   <div class="modal">
-    <h2>☁️ Email Assets — ImageKit</h2>
+    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 18a4 4 0 01-.5-7.97A5.5 5.5 0 0117.9 9.5 3.5 3.5 0 0117.5 16" stroke-linecap="round"/><path d="M12 12v6M9.5 14l2.5-2.5L14.5 14" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Email Assets — ImageKit</h2>
     <p class="sub">Uploads go straight to your ImageKit media library and are served from its CDN.</p>
 
     <label class="field-label" for="ik-endpoint">URL endpoint</label>
@@ -1522,7 +1713,7 @@
       const el = document.createElement('div');
       el.className = 'tab' + (id === state.activeId ? ' active' : '');
       el.innerHTML = `<span class="name"></span><span class="dirty-dot" style="${f.dirty ? '' : 'visibility:hidden'}"></span>
-        <button class="close" title="Close">✕</button>`;
+        <button class="close" title="Close tab" aria-label="Close tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg></button>`;
       el.querySelector('.name').textContent = f.name;
       el.addEventListener('click', (e) => {
         if (e.target.closest('.close')) return;
@@ -1912,7 +2103,7 @@
         if (tagContent.startsWith('/')) {
           const name = nearestUnclosedTag(lastLT);
           if (!name) return null;
-          return { list: [{ label: `</${name}>`, detail: 'close tag', kind: '⌫', insert: `${name}>`, replaceStart: start, replaceEnd: caret }] };
+          return { list: [{ label: `</${name}>`, detail: 'close tag', kind: '/>', insert: `${name}>`, replaceStart: start, replaceEnd: caret }] };
         }
         if (!/[\s]/.test(tagContent)) {
           const list = HTML_TAGS.filter(t => !tagContent || t.startsWith(tagContent.toLowerCase()))
@@ -1940,7 +2131,7 @@
 
       if (prefix) {
         const list = SNIPPETS.filter(s => s.trigger.startsWith(prefix.toLowerCase()))
-          .map(s => ({ label: s.trigger, detail: s.label, kind: '❖', insert: s.body, snippet: true, replaceStart: start, replaceEnd: caret }));
+          .map(s => ({ label: s.trigger, detail: s.label, kind: '{}', insert: s.body, snippet: true, replaceStart: start, replaceEnd: caret }));
         if (!list.length) return null;
         return { list };
       }
@@ -2113,7 +2304,7 @@
       const row = document.createElement('div');
       row.className = 'node';
       row.style.paddingLeft = (8 + depth * 14) + 'px';
-      row.innerHTML = `${iconFor(node.name, node.isDir)}<span class="name"></span>${!node.isDir ? '<span class="star">★</span>' : ''}`;
+      row.innerHTML = `${iconFor(node.name, node.isDir)}<span class="name"></span>${!node.isDir ? '<span class="star"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 4l2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg></span>' : ''}`;
       row.querySelector('.name').textContent = node.name;
       if (favorites.has(node.path)) row.classList.add('favorited');
       if (state.activePath === node.path) row.classList.add('active');
@@ -2863,11 +3054,11 @@ ${rows}
         el.draggable = true;
         el.innerHTML = renderBlock(b) + `
           <div class="cblock-controls">
-            <button data-act="up" title="Move up">↑</button>
-            <button data-act="down" title="Move down">↓</button>
-            <button data-act="dup" title="Duplicate">⧉</button>
-            <button data-act="save" title="Save to My Blocks">★</button>
-            <button data-act="del" title="Delete">✕</button>
+            <button data-act="up" title="Move up" aria-label="Move block up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M6 11l6-6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button data-act="down" title="Move down" aria-label="Move block down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M6 13l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button data-act="dup" title="Duplicate" aria-label="Duplicate block"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h8" stroke-linecap="round"/></svg></button>
+            <button data-act="save" title="Save to My Blocks" aria-label="Save block to My Blocks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h11l3 3v13H5z" stroke-linejoin="round"/><path d="M8 4v5h6V4M8 20v-5h8v5" stroke-linejoin="round"/></svg></button>
+            <button data-act="del" title="Delete" aria-label="Delete block"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           </div>`;
         el.addEventListener('click', (e) => {
           const act = e.target.closest('[data-act]')?.dataset.act;
@@ -3112,7 +3303,7 @@ ${rows}
       card.className = 'tpl-card';
       card.innerHTML = `
         <div class="tpl-thumb"><iframe loading="lazy" title="${attr(name)} preview"></iframe></div>
-        <div class="tpl-meta"><span class="tpl-name"></span>${deletable ? '<button class="tpl-del" title="Delete">✕</button>' : ''}</div>`;
+        <div class="tpl-meta"><span class="tpl-name"></span>${deletable ? '<button class="tpl-del" title="Delete template" aria-label="Delete template"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' : ''}</div>`;
       card.querySelector('.tpl-name').textContent = name;
       card.querySelector('iframe').srcdoc = buildEmailHTML(designObj);
       card.addEventListener('click', (e) => {
@@ -3226,17 +3417,50 @@ ${rows}
      UTM Builder — consistent campaign URLs
   ========================================================= */
   const utm = (() => {
-    const QUICK = [
-      ['newsletter', 'email'], ['promo', 'email'], ['instagram', 'social'],
-      ['facebook', 'cpc'], ['google', 'cpc'], ['whatsapp', 'messaging']
-    ];
-    let presets = loadStore().utmPresets || [];
-    let history = loadStore().utmHistory || [];
-    let lastUrl = '';
-
     const clean = v => String(v || '').trim().toLowerCase().replace(/\s+/g, '-');
 
-    function persist() { saveStore({ utmPresets: presets, utmHistory: history.slice(0, 8) }); }
+    // --- Quick Preset shortcut lists (managed by the user) ---
+    const SEED = {
+      source: [
+        { value: 'newsletter', label: 'Newsletter' },
+        { value: 'promo', label: 'Promotional' },
+        { value: 'instagram', label: 'Instagram' },
+        { value: 'facebook', label: 'Facebook' },
+        { value: 'tiktok', label: 'TikTok' },
+        { value: 'google', label: 'Google' },
+        { value: 'whatsapp', label: 'WhatsApp' }
+      ],
+      medium: [
+        { value: 'email', label: 'Email' },
+        { value: 'social', label: 'Organic social' },
+        { value: 'cpc', label: 'Paid (CPC)' },
+        { value: 'banner', label: 'Banner' },
+        { value: 'partner', label: 'Partner' },
+        { value: 'messaging', label: 'Messaging' }
+      ]
+    };
+
+    const stored = loadStore();
+    let shortcuts = stored.utmShortcuts;
+    if (!shortcuts || !shortcuts.source || !shortcuts.medium) {
+      shortcuts = {
+        source: SEED.source.map(s => ({ id: uid(), pinned: false, ...s })),
+        medium: SEED.medium.map(s => ({ id: uid(), pinned: false, ...s }))
+      };
+    }
+    let defaults = stored.utmDefaults || { source: null, medium: null };
+    let presets = stored.utmPresets || [];
+    let history = stored.utmHistory || [];
+    let manageTab = 'source';
+    let lastUrl = '';
+
+    function persist() {
+      saveStore({ utmShortcuts: shortcuts, utmDefaults: defaults,
+        utmPresets: presets, utmHistory: history.slice(0, 8) });
+    }
+
+    // Pinned float to the top; equal-pin items keep their stored order (stable sort).
+    const sortedList = list => [...list].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
 
     function read() {
       return {
@@ -3306,32 +3530,40 @@ ${rows}
       renderLists();
     }
 
-    function renderLists() {
-      const chips = $('#utm-quick-chips');
-      chips.innerHTML = '';
-      for (const [s, m] of QUICK) {
+    // --- Quick chips under each field ---
+    function renderChips(kind) {
+      const host = $(`#utm-${kind}-chips`);
+      host.innerHTML = '';
+      for (const item of sortedList(shortcuts[kind])) {
         const c = document.createElement('button');
         c.className = 'chip';
-        c.textContent = `${s} / ${m}`;
+        c.title = `Use ${item.value}`;
+        c.innerHTML = `${item.pinned ? '<span class="pin-dot"></span>' : ''}<span class="chip-text"></span>`;
+        c.querySelector('.chip-text').textContent = item.label || item.value;
         c.addEventListener('click', () => {
-          $('#utm-source').value = s;
-          $('#utm-medium').value = m;
+          $(`#utm-${kind}`).value = item.value;
           generate();
         });
-        chips.appendChild(c);
+        host.appendChild(c);
       }
+    }
+
+    function renderLists() {
+      renderChips('source');
+      renderChips('medium');
+
       const pr = $('#utm-presets');
       pr.innerHTML = '';
       if (!presets.length) {
-        pr.innerHTML = '<span class="inspector-empty">No presets yet — fill the form and “Save as preset”.</span>';
+        pr.innerHTML = '<span class="inspector-empty">No campaign presets yet — fill the form and “Save as preset”.</span>';
       }
       for (const p of presets) {
         const c = document.createElement('button');
         c.className = 'chip';
-        c.innerHTML = `<span></span><span class="x">✕</span>`;
-        c.querySelector('span').textContent = p.name;
+        c.innerHTML = `<span class="chip-text"></span><span class="x" title="Delete preset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg></span>`;
+        c.querySelector('.chip-text').textContent = p.name;
         c.addEventListener('click', (e) => {
-          if (e.target.classList.contains('x')) {
+          if (e.target.closest('.x')) {
             presets = presets.filter(x => x.id !== p.id);
             persist(); renderLists();
             return;
@@ -3356,6 +3588,135 @@ ${rows}
           toast('Copied');
         });
         hist.appendChild(item);
+      }
+    }
+
+    /* ---- Manage Presets modal (inline edit, drag reorder, pin, default) ---- */
+    const ICON = {
+      handle: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>',
+      pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 16v4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      star: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg>',
+      starO: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 4l2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg>',
+      del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    };
+
+    let dragId = null;
+    function renderManage() {
+      const host = $('#preset-list');
+      host.innerHTML = '';
+      const list = shortcuts[manageTab];
+      if (!list.length) {
+        host.innerHTML = '<div class="preset-empty">No shortcuts yet — add one below.</div>';
+        return;
+      }
+      for (const item of sortedList(list)) {
+        const row = document.createElement('div');
+        row.className = 'preset-row';
+        row.dataset.id = item.id;
+        row.draggable = true;
+        const isDefault = defaults[manageTab] === item.id;
+        row.innerHTML = `
+          <span class="drag-handle" title="Drag to reorder" aria-label="Drag to reorder">${ICON.handle}</span>
+          <input class="p-value" value="" spellcheck="false" aria-label="Value" placeholder="value">
+          <input class="p-label" value="" spellcheck="false" aria-label="Label" placeholder="label (optional)">
+          <div class="row-actions">
+            <button class="pin-btn ${item.pinned ? 'on' : ''}" title="${item.pinned ? 'Unpin' : 'Pin to top'}" aria-label="Pin">${ICON.pin}</button>
+            <button class="star-btn ${isDefault ? 'on' : ''}" title="${isDefault ? 'Default for new URLs' : 'Set as default'}" aria-label="Set as default">${isDefault ? ICON.star : ICON.starO}</button>
+            <button class="del-btn" title="Delete" aria-label="Delete">${ICON.del}</button>
+          </div>`;
+        row.querySelector('.p-value').value = item.value;
+        row.querySelector('.p-label').value = item.label || '';
+
+        row.querySelector('.p-value').addEventListener('input', e => {
+          item.value = e.target.value; persist(); renderChips(manageTab);
+        });
+        row.querySelector('.p-value').addEventListener('blur', e => {
+          const c = clean(e.target.value);
+          if (c !== e.target.value) { e.target.value = c; item.value = c; persist(); renderChips(manageTab); }
+        });
+        row.querySelector('.p-label').addEventListener('input', e => {
+          item.label = e.target.value; persist(); renderChips(manageTab);
+        });
+        row.querySelector('.pin-btn').addEventListener('click', () => {
+          item.pinned = !item.pinned; persist(); renderManage(); renderChips(manageTab);
+        });
+        row.querySelector('.star-btn').addEventListener('click', () => {
+          defaults[manageTab] = isDefault ? null : item.id;
+          persist(); renderManage();
+        });
+        row.querySelector('.del-btn').addEventListener('click', () => {
+          shortcuts[manageTab] = list.filter(x => x.id !== item.id);
+          if (defaults[manageTab] === item.id) defaults[manageTab] = null;
+          persist(); renderManage(); renderChips(manageTab);
+        });
+
+        // Drag reorder
+        row.addEventListener('dragstart', e => {
+          dragId = item.id; row.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        row.addEventListener('dragend', () => {
+          dragId = null; row.classList.remove('dragging');
+          host.querySelectorAll('.drop-target').forEach(r => r.classList.remove('drop-target'));
+        });
+        row.addEventListener('dragover', e => {
+          e.preventDefault();
+          if (item.id !== dragId) row.classList.add('drop-target');
+        });
+        row.addEventListener('dragleave', () => row.classList.remove('drop-target'));
+        row.addEventListener('drop', e => {
+          e.preventDefault();
+          row.classList.remove('drop-target');
+          if (!dragId || dragId === item.id) return;
+          const arr = shortcuts[manageTab];
+          const from = arr.findIndex(x => x.id === dragId);
+          const to = arr.findIndex(x => x.id === item.id);
+          if (from === -1 || to === -1) return;
+          const [moved] = arr.splice(from, 1);
+          arr.splice(to, 0, moved);
+          persist(); renderManage(); renderChips(manageTab);
+        });
+        host.appendChild(row);
+      }
+    }
+
+    function openManage(kind) {
+      manageTab = kind;
+      $$('#presets-tabs button').forEach(b =>
+        b.classList.toggle('active', b.dataset.tab === kind));
+      renderManage();
+      $('#presets-backdrop').classList.add('open');
+      setTimeout(() => $('#preset-add-value').focus(), 50);
+    }
+
+    function addShortcut() {
+      const value = clean($('#preset-add-value').value);
+      const label = $('#preset-add-label').value.trim();
+      if (!value) { toast('Enter a value first'); return; }
+      if (shortcuts[manageTab].some(x => x.value === value)) {
+        toast('That shortcut already exists'); return;
+      }
+      shortcuts[manageTab].push({ id: uid(), value, label, pinned: false });
+      $('#preset-add-value').value = '';
+      $('#preset-add-label').value = '';
+      persist(); renderManage(); renderChips(manageTab);
+      $('#preset-add-value').focus();
+    }
+
+    $$('#presets-tabs button').forEach(b =>
+      b.addEventListener('click', () => openManage(b.dataset.tab)));
+    $('#preset-add-btn').addEventListener('click', addShortcut);
+    $('#preset-add-value').addEventListener('keydown', e => { if (e.key === 'Enter') addShortcut(); });
+    $('#preset-add-label').addEventListener('keydown', e => { if (e.key === 'Enter') addShortcut(); });
+    $('#manage-source').addEventListener('click', () => openManage('source'));
+    $('#manage-medium').addEventListener('click', () => openManage('medium'));
+
+    function applyDefaults() {
+      for (const kind of ['source', 'medium']) {
+        const el = $(`#utm-${kind}`);
+        if (el.value.trim()) continue;
+        const def = shortcuts[kind].find(x => x.id === defaults[kind]);
+        if (def) el.value = def.value;
       }
     }
 
@@ -3384,6 +3745,7 @@ ${rows}
       toast(`Preset “${name}” saved`);
     });
     $('#btn-utm').addEventListener('click', () => {
+      applyDefaults();
       renderLists(); generate();
       $('#utm-backdrop').classList.add('open');
     });
@@ -3611,6 +3973,7 @@ ${rows}
         if ($('#help-backdrop').classList.contains('open')) $('#help-backdrop').classList.remove('open');
         else if ($('#settings-backdrop').classList.contains('open')) $('#settings-backdrop').classList.remove('open');
         else if ($('#assets-backdrop').classList.contains('open')) $('#assets-backdrop').classList.remove('open');
+        else if ($('#presets-backdrop').classList.contains('open')) $('#presets-backdrop').classList.remove('open');
         else if ($('#templates-backdrop').classList.contains('open')) $('#templates-backdrop').classList.remove('open');
         else if ($('#utm-backdrop').classList.contains('open')) $('#utm-backdrop').classList.remove('open');
         else if ($('#findbar').classList.contains('open') && document.activeElement !== inputEl) closeFindBar();
