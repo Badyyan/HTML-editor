@@ -942,6 +942,74 @@
   }
   .utm-history .item:hover { background: var(--current-line); color: var(--fg); }
 
+  /* ---------- Integrations modal ---------- */
+  .int-status {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--current-line); padding: 13px 14px;
+  }
+  .grow-min { flex: 1; min-width: 0; }
+  .int-led {
+    width: 9px; height: 9px; border-radius: 50%; flex: none;
+    background: var(--fg-dim);
+  }
+  .int-led.on {
+    background: var(--live);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--live) 22%, transparent);
+  }
+  .int-led.err {
+    background: var(--danger);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 22%, transparent);
+  }
+  .int-title { font-size: 13px; font-weight: 600; }
+  .int-detail {
+    font-size: 11.5px; color: var(--fg-dim); font-family: var(--code-font);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .toggle-like {
+    height: 27px; padding: 0 12px; flex: none;
+    border-radius: 7px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--fg); font-size: 11.5px; cursor: pointer;
+    transition: border-color 0.14s ease, color 0.14s ease, transform 0.1s ease;
+  }
+  .toggle-like:hover { border-color: var(--accent); }
+  .toggle-like:active { transform: scale(0.96); }
+  .toggle-like.danger:hover { border-color: var(--danger); color: var(--danger); }
+  .toggle-like[disabled] { opacity: 0.55; cursor: default; }
+  .int-msg {
+    display: none; margin-top: 12px; padding: 10px 12px; border-radius: 9px;
+    font-size: 12px; line-height: 1.5;
+  }
+  .int-msg.err {
+    display: block;
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  }
+  .int-msg.ok {
+    display: block;
+    background: color-mix(in srgb, var(--live) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--live) 35%, transparent);
+  }
+  .int-msg.busy {
+    display: block;
+    background: var(--current-line);
+    border: 1px solid var(--border);
+    color: var(--fg-dim);
+  }
+  .int-result {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin-top: 12px; padding: 11px 12px;
+    border: 1px solid var(--border); border-radius: 12px; background: var(--current-line);
+  }
+  .int-thumb {
+    width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex: none;
+    border: 1px solid var(--border); background: var(--panel);
+  }
+  .int-url {
+    display: block; font-family: var(--code-font); font-size: 10.5px; color: var(--fg-dim);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+  }
+
   /* ---------- Email assets panel ---------- */
   .assets-empty {
     padding: 8px 10px; font-size: 12px; color: var(--fg-dim); line-height: 1.5;
@@ -1372,28 +1440,68 @@
 
 <div class="modal-backdrop" id="assets-backdrop">
   <div class="modal">
-    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 18a4 4 0 01-.5-7.97A5.5 5.5 0 0117.9 9.5 3.5 3.5 0 0117.5 16" stroke-linecap="round"/><path d="M12 12v6M9.5 14l2.5-2.5L14.5 14" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Email Assets — ImageKit</h2>
-    <p class="sub">Uploads go straight to your ImageKit media library and are served from its CDN.</p>
+    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 3H4.5A1.5 1.5 0 003 4.5V9M15 3h4.5A1.5 1.5 0 0121 4.5V9M9 21H4.5A1.5 1.5 0 013 19.5V15M15 21h4.5a1.5 1.5 0 001.5-1.5V15" stroke-linecap="round"/><circle cx="12" cy="12" r="3.2"/></svg></span> Integrations</h2>
+    <p class="sub">Connect external services to your workspace. Settings are validated before saving and kept on this device.</p>
 
-    <label class="field-label" for="ik-endpoint">URL endpoint</label>
-    <input class="field-input" id="ik-endpoint" placeholder="https://ik.imagekit.io/your_id" spellcheck="false">
-
-    <label class="field-label" for="ik-public">Public key</label>
-    <input class="field-input" id="ik-public" placeholder="public_…" spellcheck="false">
-
-    <label class="field-label" for="ik-auth">Auth server URL (required for uploads)</label>
-    <input class="field-input" id="ik-auth" placeholder="https://imagekit-auth.you.workers.dev" spellcheck="false">
-
-    <label class="field-label" for="ik-folder">Upload folder</label>
-    <input class="field-input" id="ik-folder" placeholder="/email-assets" spellcheck="false">
-
-    <div class="danger-note">
-      Never enter your ImageKit <b>private</b> key here or anywhere in a browser —
-      it belongs only on the auth server (see <code>Server/imagekit-auth</code> in the repo).
-      The auth server signs each upload; this page only ever holds the public key.
+    <div class="seg-tabs">
+      <button class="active" type="button">ImageKit</button>
     </div>
 
-    <button class="primary-btn" id="ik-save">Save configuration</button>
+    <!-- Connection status card (credentials hidden by default) -->
+    <div class="int-status" id="int-status">
+      <span class="int-led" id="int-led"></span>
+      <div class="grow-min">
+        <div class="int-title" id="int-title">Not connected</div>
+        <div class="int-detail" id="int-detail">Add your ImageKit credentials to upload images from the editor.</div>
+      </div>
+      <button class="toggle-like" id="int-edit" type="button">Configure</button>
+      <button class="toggle-like" id="int-test" type="button" style="display:none;">Test connection</button>
+      <button class="toggle-like danger" id="int-disconnect" type="button" style="display:none;">Disconnect</button>
+    </div>
+
+    <div class="int-msg" id="int-msg" role="status"></div>
+
+    <!-- Credential form: revealed by Configure, hidden once saved -->
+    <div id="int-form" style="display:none;">
+      <label class="field-label" for="ik-endpoint">URL endpoint</label>
+      <input class="field-input" id="ik-endpoint" placeholder="https://ik.imagekit.io/your_id" spellcheck="false" autocomplete="off">
+
+      <label class="field-label" for="ik-public">Public API key</label>
+      <input class="field-input" id="ik-public" placeholder="public_…" spellcheck="false" autocomplete="off">
+
+      <label class="field-label" for="ik-auth">Auth server URL <span style="font-weight:400">(signs uploads — required)</span></label>
+      <input class="field-input" id="ik-auth" placeholder="https://imagekit-auth.you.workers.dev" spellcheck="false" autocomplete="off">
+
+      <label class="field-label" for="ik-folder">Upload folder</label>
+      <input class="field-input" id="ik-folder" placeholder="/email-assets" spellcheck="false" autocomplete="off">
+
+      <div class="danger-note">
+        Never enter your ImageKit <b>private</b> key here or anywhere in a browser —
+        it belongs only on the auth server (see <code>Server/imagekit-auth</code> in the repo).
+        The auth server signs each upload; this page only ever holds the public key.
+      </div>
+
+      <button class="primary-btn" id="ik-save">Validate &amp; save</button>
+    </div>
+
+    <!-- Upload directly from the integration panel -->
+    <div id="int-upload-section" style="display:none;">
+      <div class="tpl-section-label" style="margin-top:20px;">Upload an image</div>
+      <div class="dropzone" id="int-dropzone" style="margin:0;">Drop an image here or click to choose</div>
+      <div class="int-result" id="int-result" style="display:none;">
+        <img class="int-thumb" id="int-thumb" alt="">
+        <div class="grow-min">
+          <div class="int-title" id="int-result-name"></div>
+          <code class="int-url" id="int-url"></code>
+        </div>
+        <button class="toggle-like" id="int-copy" type="button">Copy URL</button>
+        <button class="toggle-like" id="int-insert" type="button">Insert</button>
+      </div>
+      <p class="preset-hint" style="margin-top:10px;">
+        The URL works anywhere an image address is accepted — email tags, the
+        editor, or AI image workflows that need a hosted source image.
+      </p>
+    </div>
   </div>
 </div>
 
@@ -3783,9 +3891,18 @@ ${rows}
       folder: '/email-assets'
     };
     let cfg = Object.assign({}, DEFAULTS, loadStore().imagekit || {});
+    // Migration: earlier builds shipped demo credentials as defaults, which
+    // some browsers persisted. Purge them so no third-party account leaks
+    // into anyone's saved settings.
+    if (cfg.endpoint === 'https://ik.imagekit.io/salla' ||
+        (cfg.publicKey || '').startsWith('public_NEsyax5TASo6')) {
+      cfg = Object.assign({}, DEFAULTS, { folder: cfg.folder || DEFAULTS.folder });
+      saveStore({ imagekit: cfg });
+    }
     let recent = loadStore().assetsRecent || []; // [{name,url,thumb}]
     let cloud = [];        // last fetched folder listing
     let uploading = 0;
+    let lastUpload = null; // {name,url,thumb} — surfaced in the Integrations panel
 
     function persist() {
       saveStore({ imagekit: cfg, assetsRecent: recent.slice(0, 20) });
@@ -3950,32 +4067,180 @@ ${rows}
       }
     }
 
-    function openConfig() {
-      $('#ik-endpoint').value = cfg.endpoint;
-      $('#ik-public').value = cfg.publicKey;
-      $('#ik-auth').value = cfg.authUrl;
-      $('#ik-folder').value = cfg.folder;
+    /* ---- Integrations panel (credentials hidden unless editing) ---- */
+    const isConfigured = () =>
+      !!(cfg.endpoint && cfg.publicKey && cfg.authUrl);
+
+    const maskKey = key => key.length > 12
+      ? key.slice(0, 10) + '••••••••'
+      : (key ? key.slice(0, 3) + '••••' : '');
+
+    function intMessage(kind, text) {
+      const el = $('#int-msg');
+      el.className = 'int-msg' + (kind ? ' ' + kind : '');
+      el.textContent = text || '';
+    }
+
+    function renderIntegration() {
+      const configured = isConfigured();
+      $('#int-led').className = 'int-led' + (configured ? ' on' : '');
+      $('#int-title').textContent = configured ? 'ImageKit connected' : 'Not connected';
+      $('#int-detail').textContent = configured
+        ? `${cfg.endpoint.replace(/^https?:\/\//, '')} · ${maskKey(cfg.publicKey)} · ${cfg.folder}`
+        : 'Add your ImageKit credentials to upload images from the editor.';
+      $('#int-edit').textContent = configured ? 'Edit' : 'Configure';
+      $('#int-test').style.display = configured ? '' : 'none';
+      $('#int-disconnect').style.display = configured ? '' : 'none';
+      $('#int-upload-section').style.display = configured ? '' : 'none';
+
+      const result = $('#int-result');
+      if (lastUpload) {
+        result.style.display = '';
+        $('#int-thumb').src = lastUpload.thumb + (lastUpload.thumb.includes('?') ? '&' : '?') + 'tr=w-90,h-90';
+        $('#int-result-name').textContent = lastUpload.name;
+        $('#int-url').textContent = lastUpload.url;
+      } else {
+        result.style.display = 'none';
+      }
+    }
+
+    function openConfig(startEditing) {
+      renderIntegration();
+      intMessage('', '');
+      const showForm = startEditing || !isConfigured();
+      $('#int-form').style.display = showForm ? '' : 'none';
+      if (showForm) {
+        $('#ik-endpoint').value = cfg.endpoint;
+        $('#ik-public').value = cfg.publicKey;
+        $('#ik-auth').value = cfg.authUrl;
+        $('#ik-folder').value = cfg.folder;
+      }
       $('#assets-backdrop').classList.add('open');
     }
 
-    $('#ik-save').addEventListener('click', () => {
-      cfg = {
-        endpoint: $('#ik-endpoint').value.trim() || DEFAULTS.endpoint,
-        publicKey: $('#ik-public').value.trim() || DEFAULTS.publicKey,
-        authUrl: $('#ik-auth').value.trim(),
+    function validateFields(v) {
+      if (/^private_/i.test(v.publicKey) || /private_/i.test(v.authUrl)) {
+        return 'That looks like a PRIVATE key — it must never be entered in a browser. It belongs only on the auth server.';
+      }
+      if (!/^https:\/\/ik\.imagekit\.io\/[\w./-]+$/.test(v.endpoint)) {
+        return 'The URL endpoint should look like https://ik.imagekit.io/your_id';
+      }
+      if (!/^public_[\w+/=]+$/.test(v.publicKey)) {
+        return 'The public key should start with "public_". (Never paste the private key here.)';
+      }
+      if (!/^https:\/\/.+/.test(v.authUrl)) {
+        return 'The auth server URL must be an https:// address.';
+      }
+      return null;
+    }
+
+    /** Round-trip to the auth server to prove the connection works. */
+    async function testConnection() {
+      intMessage('busy', 'Testing connection…');
+      $('#int-test').disabled = true;
+      try {
+        const res = await fetch(cfg.authUrl.replace(/\/$/, '') + '/auth');
+        if (!res.ok) throw new Error('auth server responded ' + res.status);
+        const body = await res.json();
+        if (!body.signature || !body.token) throw new Error('auth server response is missing the upload signature');
+        intMessage('ok', 'Connection verified — the auth server is issuing upload signatures.');
+        $('#int-led').className = 'int-led on';
+      } catch (err) {
+        intMessage('err', 'Connection failed: ' + err.message +
+          '. Check the auth server URL and that it is deployed.');
+        $('#int-led').className = 'int-led err';
+      } finally {
+        $('#int-test').disabled = false;
+      }
+    }
+
+    $('#ik-save').addEventListener('click', async () => {
+      const candidate = {
+        endpoint: $('#ik-endpoint').value.trim().replace(/\/$/, ''),
+        publicKey: $('#ik-public').value.trim(),
+        authUrl: $('#ik-auth').value.trim().replace(/\/$/, ''),
         folder: $('#ik-folder').value.trim() || DEFAULTS.folder
       };
-      if (cfg.folder && !cfg.folder.startsWith('/')) cfg.folder = '/' + cfg.folder;
-      persist();
-      $('#assets-backdrop').classList.remove('open');
+      if (!candidate.folder.startsWith('/')) candidate.folder = '/' + candidate.folder;
+      const problem = validateFields(candidate);
+      if (problem) { intMessage('err', problem); return; }
+
+      cfg = candidate;
+      persist();                     // saved immediately — survives refresh
+      $('#int-form').style.display = 'none';
+      renderIntegration();
       render();
-      toast('ImageKit configuration saved');
+      intMessage('ok', 'Saved. Running a connection test…');
+      await testConnection();
     });
 
-    $('#assets-config').addEventListener('click', openConfig);
+    $('#int-edit').addEventListener('click', () => {
+      const form = $('#int-form');
+      const show = form.style.display === 'none';
+      form.style.display = show ? '' : 'none';
+      if (show) {
+        $('#ik-endpoint').value = cfg.endpoint;
+        $('#ik-public').value = cfg.publicKey;
+        $('#ik-auth').value = cfg.authUrl;
+        $('#ik-folder').value = cfg.folder;
+        $('#ik-endpoint').focus();
+      }
+    });
+    $('#int-test').addEventListener('click', testConnection);
+    $('#int-disconnect').addEventListener('click', () => {
+      if (!confirm('Disconnect ImageKit? Your credentials will be removed from this browser.')) return;
+      cfg = Object.assign({}, DEFAULTS);
+      persist();
+      lastUpload = null;
+      renderIntegration();
+      render();
+      intMessage('', '');
+      toast('ImageKit disconnected');
+    });
+
+    // In-modal upload: same pipeline as the sidebar panel.
+    const intZone = $('#int-dropzone');
+    intZone.addEventListener('click', () => $('#asset-file-input').click());
+    intZone.addEventListener('dragover', e => { e.preventDefault(); intZone.classList.add('dragover'); });
+    intZone.addEventListener('dragleave', () => intZone.classList.remove('dragover'));
+    intZone.addEventListener('drop', e => {
+      e.preventDefault(); intZone.classList.remove('dragover');
+      [...e.dataTransfer.files].forEach(uploadTracked);
+    });
+
+    async function uploadTracked(file) {
+      intMessage('busy', `Uploading ${file.name}…`);
+      intZone.textContent = `Uploading ${file.name}…`;
+      const prevFirst = recent[0];
+      await upload(file);
+      intZone.textContent = 'Drop an image here or click to choose';
+      if (recent[0] && recent[0] !== prevFirst) {
+        lastUpload = recent[0];
+        intMessage('ok', 'Uploaded — the CDN URL below is ready to use.');
+      } else {
+        intMessage('err', 'Upload failed — run “Test connection” to diagnose, then try again.');
+      }
+      renderIntegration();
+    }
+
+    $('#int-copy').addEventListener('click', async () => {
+      if (!lastUpload) return;
+      await copyText(lastUpload.url);
+      toast('CDN URL copied');
+    });
+    $('#int-insert').addEventListener('click', () => {
+      if (!lastUpload) return;
+      $('#assets-backdrop').classList.remove('open');
+      inputEl.focus();
+      insertAtCaret(emailImgTag(lastUpload.url, lastUpload.name));
+      toast('<img> inserted');
+    });
+
+    $('#assets-config').addEventListener('click', () => openConfig(false));
     $('#assets-refresh').addEventListener('click', refreshCloud);
     $('#asset-file-input').addEventListener('change', e => {
-      [...e.target.files].forEach(upload);
+      const viaModal = $('#assets-backdrop').classList.contains('open');
+      [...e.target.files].forEach(f => viaModal ? uploadTracked(f) : upload(f));
       e.target.value = '';
     });
 
