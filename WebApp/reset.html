@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>Reset password — Aurora</title>
+<link rel="stylesheet" href="aurora.css">
+<script src="auth.js"></script>
+</head>
+<body>
+<nav class="site-nav">
+  <a class="brand" href="index.html"><span class="dot"></span>Aurora</a>
+  <span class="grow"></span>
+  <a class="nav-link" href="login.html">Back to <strong>Log in</strong></a>
+</nav>
+
+<div class="auth-wrap">
+  <div>
+    <!-- Step 1: request a code -->
+    <form class="auth-card" id="request-form" novalidate>
+      <h1>Reset your password</h1>
+      <p class="sub">Enter your account email and we’ll issue a 6-digit reset code.</p>
+
+      <label class="field-label" for="email">Email</label>
+      <input class="field-input" id="email" type="email" autocomplete="email" required>
+
+      <div class="auth-msg" id="request-msg" role="alert"></div>
+
+      <button class="btn btn-primary btn-block" type="submit">Get reset code</button>
+    </form>
+
+    <!-- Step 2: apply the code -->
+    <form class="auth-card" id="apply-form" style="display:none;" novalidate>
+      <h1>Enter your code</h1>
+      <p class="sub" id="apply-sub">Use the 6-digit code together with your new password.</p>
+
+      <label class="field-label" for="code">Reset code</label>
+      <input class="field-input" id="code" type="text" inputmode="numeric" maxlength="6"
+             style="letter-spacing:0.3em;font-family:var(--code-font);" required>
+
+      <label class="field-label" for="new-password">New password <span style="font-weight:400">(8+ characters)</span></label>
+      <input class="field-input" id="new-password" type="password" autocomplete="new-password" minlength="8" required>
+
+      <div class="auth-msg" id="apply-msg" role="alert"></div>
+
+      <button class="btn btn-primary btn-block" type="submit">Set new password</button>
+    </form>
+
+    <p class="demo-note">
+      A hosted site would email this code. This demo stores accounts in your
+      browser, so the code is shown right here instead.
+    </p>
+  </div>
+</div>
+
+<script>
+(function () {
+  const requestForm = document.getElementById('request-form');
+  const applyForm = document.getElementById('apply-form');
+  const requestMsg = document.getElementById('request-msg');
+  const applyMsg = document.getElementById('apply-msg');
+  let email = '';
+
+  requestForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    requestMsg.className = 'auth-msg';
+    try {
+      email = document.getElementById('email').value;
+      const code = AuroraAuth.requestReset(email);
+      requestForm.style.display = 'none';
+      applyForm.style.display = '';
+      applyMsg.innerHTML = 'Your reset code: <code></code> — it expires in 15 minutes.';
+      applyMsg.querySelector('code').textContent = code;
+      applyMsg.className = 'auth-msg ok';
+      document.getElementById('code').focus();
+    } catch (err) {
+      requestMsg.textContent = err.message;
+      requestMsg.className = 'auth-msg error';
+    }
+  });
+
+  applyForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await AuroraAuth.applyReset(
+        email,
+        document.getElementById('code').value,
+        document.getElementById('new-password').value
+      );
+      applyMsg.textContent = 'Password updated — redirecting to log in…';
+      applyMsg.className = 'auth-msg ok';
+      setTimeout(() => location.href = 'login.html', 900);
+    } catch (err) {
+      applyMsg.textContent = err.message;
+      applyMsg.className = 'auth-msg error';
+    }
+  });
+})();
+</script>
+</body>
+</html>

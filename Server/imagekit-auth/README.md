@@ -10,7 +10,7 @@ to ImageKit **without ever exposing the private key to a browser**.
 
 ## Security model
 
-- The **public key** and URL endpoint (`https://ik.imagekit.io/salla`) are safe
+- The **public key** and URL endpoint (`https://ik.imagekit.io/<your_id>`) are safe
   to ship in the editor — they can't do anything without a signature.
 - The **private key** exists only as a Worker secret. It is never in this
   repo, never in `localStorage`, never in the page.

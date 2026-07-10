@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>Log in — Aurora</title>
+<link rel="stylesheet" href="aurora.css">
+<script src="auth.js"></script>
+</head>
+<body>
+<nav class="site-nav">
+  <a class="brand" href="index.html"><span class="dot"></span>Aurora</a>
+  <span class="grow"></span>
+  <a class="nav-link" href="signup.html">Need an account? <strong>Sign up</strong></a>
+</nav>
+
+<div class="auth-wrap">
+  <div>
+    <form class="auth-card" id="login-form" novalidate>
+      <h1>Welcome back</h1>
+      <p class="sub">Log in to open your dashboard and designs.</p>
+
+      <label class="field-label" for="email">Email</label>
+      <input class="field-input" id="email" type="email" autocomplete="email" required>
+
+      <label class="field-label" for="password">Password</label>
+      <input class="field-input" id="password" type="password" autocomplete="current-password" required>
+
+      <div class="auth-msg" id="msg" role="alert"></div>
+
+      <button class="btn btn-primary btn-block" type="submit">Log in</button>
+      <p class="auth-alt">
+        <a href="reset.html">Forgot your password?</a>
+      </p>
+    </form>
+    <p class="demo-note">
+      Accounts are stored privately in this browser — nothing is sent to a server.
+    </p>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Already signed in → straight to the destination.
+  const next = new URLSearchParams(location.search).get('next') || 'dashboard.html';
+  if (AuroraAuth.current()) { location.replace(next); return; }
+
+  const form = document.getElementById('login-form');
+  const msg = document.getElementById('msg');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.className = 'auth-msg';
+    try {
+      await AuroraAuth.login(
+        document.getElementById('email').value,
+        document.getElementById('password').value
+      );
+      location.href = next;
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.className = 'auth-msg error';
+    }
+  });
+})();
+</script>
+</body>
+</html>
