@@ -1,3 +1,4 @@
+<meta charset="UTF-8">
 <title>Aurora — Editor</title>
 <meta name="color-scheme" content="light dark">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1233,6 +1234,10 @@
           </div>
           <div class="live-pill" id="live-pill"><span class="led"></span><span id="live-label">Live</span></div>
           <div class="toolbar-spacer"></div>
+          <button class="tbtn" id="btn-visual-edit" title="Edit directly in the preview" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 6.5l3 3" stroke-linecap="round"/></svg>
+            <span class="label">Edit</span>
+          </button>
           <button class="tbtn icon-only" id="btn-open-window" title="Open preview in new window">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 4h6v6M20 4l-8 8M8 6H5a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1v-3"/></svg>
           </button>
@@ -2333,12 +2338,23 @@
   ========================================================= */
   const previewFrame = $('#preview-frame');
   let previewToken = 0;
+  // Set by the visual editor when a preview-originated edit writes back to
+  // the source: the iframe already shows the new state, so skip one reload
+  // (a reload would destroy the user's in-preview selection/caret).
+  const visualSync = { skip: false };
   const schedulePreviewDebounced = debounce(() => renderPreview(), 250);
   function schedulePreview(immediate) {
     if (!settings.livePreview && !immediate) return;
     if (immediate) renderPreview(); else schedulePreviewDebounced();
   }
   function renderPreview() {
+    if (visualSync.skip) {
+      visualSync.skip = false;
+      setLive(true);
+      clearTimeout(renderPreview._t);
+      renderPreview._t = setTimeout(() => setLive(false), 500);
+      return;
+    }
     const f = activeFile();
     if (!f) return;
     previewToken++;
@@ -2377,6 +2393,503 @@
     const win = window.open('', '_blank', 'width=900,height=700');
     if (win) { win.document.open(); win.document.write(f.content); win.document.close(); }
   });
+
+  /* =========================================================
+     Shared edit history — spans code-mode typing and visual edits.
+     Programmatic textarea writes break native undo, so both editing
+     surfaces commit snapshots here.
+  ========================================================= */
+  const editHistory = (() => {
+    let stack = [];
+    let idx = -1;
+    const pushDebounced = debounce(() => commit(), 600);
+
+    function commit() {
+      const text = inputEl.value;
+      if (stack[idx] === text) return;
+      stack = stack.slice(0, idx + 1);
+      stack.push(text);
+      if (stack.length > 100) stack.shift();
+      idx = stack.length - 1;
+    }
+    function restore(text) {
+      inputEl.value = text;
+      inputEl.dispatchEvent(new Event('input')); // reloads preview + re-instruments
+    }
+    return {
+      note: pushDebounced,      // call after any change (coalesced)
+      commit,                   // immediate snapshot (before/after big ops)
+      undo() {
+        commit();
+        if (idx > 0) { idx--; restore(stack[idx]); return true; }
+        return false;
+      },
+      redo() {
+        if (idx < stack.length - 1) { idx++; restore(stack[idx]); return true; }
+        return false;
+      },
+      reset() { stack = [inputEl.value]; idx = 0; }
+    };
+  })();
+  inputEl.addEventListener('input', () => editHistory.note());
+
+  /* =========================================================
+     Visual editor — WYSIWYG editing directly in the preview iframe.
+
+     Model: the code editor text stays the single source of truth. When
+     enabled, the iframe DOM is instrumented (selection, contenteditable,
+     floating toolbar, resize handle, drag & drop). Every committed edit
+     serializes the DOM through a cleaning pass that strips ALL editing
+     artifacts, then writes the result back to the source. The exported
+     HTML therefore stays exactly as email-safe as what the user wrote —
+     table layouts and inline styles, no absolute positioning, no
+     grid/flex introduced by the editor.
+  ========================================================= */
+  const visualEdit = (() => {
+    const TEXT_TAGS = new Set(['P','H1','H2','H3','H4','H5','H6','LI','A','SPAN','STRONG','EM','B','I','TD','DIV','BLOCKQUOTE','FIGCAPTION']);
+    const INLINE_ONLY = /^(A|SPAN|STRONG|EM|B|I|U|BR|FONT|SUP|SUB|#text)$/;
+
+    let enabled = false;
+    let doc = null;          // iframe contentDocument
+    let selected = null;     // selected element in iframe
+    let editing = null;      // element currently contenteditable
+    let dragging = null;
+    const syncDebounced = debounce(() => syncBack(), 350);
+
+    /* ---------- Source sync ---------- */
+    function syncBack() {
+      if (!doc) return;
+      const clone = doc.documentElement.cloneNode(true);
+      // Strip every artifact the editor injected.
+      clone.querySelectorAll('#__aur_style__, #__aur_toolbar__, #__aur_handle__').forEach(n => n.remove());
+      clone.querySelectorAll('[data-aur-sel]').forEach(n => n.removeAttribute('data-aur-sel'));
+      clone.querySelectorAll('[data-aur-drop]').forEach(n => n.removeAttribute('data-aur-drop'));
+      clone.querySelectorAll('[contenteditable]').forEach(n => n.removeAttribute('contenteditable'));
+      clone.querySelectorAll('[draggable]').forEach(n => n.removeAttribute('draggable'));
+      clone.querySelectorAll('[spellcheck]').forEach(n => n.removeAttribute('spellcheck'));
+
+      const hadDoctype = /^\s*<!doctype/i.test(inputEl.value);
+      const html = (hadDoctype ? '<!DOCTYPE html>\n' : '') + clone.outerHTML;
+
+      visualSync.skip = true;              // iframe already shows this state
+      inputEl.value = html;
+      inputEl.dispatchEvent(new Event('input'));
+      editHistory.note();
+    }
+
+    /* ---------- Selection ---------- */
+    function isTextLeaf(el) {
+      if (!TEXT_TAGS.has(el.tagName)) return false;
+      if (el.tagName === 'TD' || el.tagName === 'DIV') {
+        // Only leaf-ish containers: no structural children.
+        return !el.querySelector('table, td, div, img');
+      }
+      return !el.querySelector('table, td, img');
+    }
+
+    function pickTarget(node) {
+      let el = node.nodeType === 1 ? node : node.parentElement;
+      while (el && el !== doc.body) {
+        if (el.id === '__aur_toolbar__' || el.closest?.('#__aur_toolbar__')) return null;
+        if (el.tagName === 'IMG') return el;
+        if (isTextLeaf(el)) return el;
+        el = el.parentElement;
+      }
+      return null;
+    }
+
+    function select(el) {
+      if (selected && selected !== el) {
+        selected.removeAttribute('data-aur-sel');
+        selected.removeAttribute('draggable');
+      }
+      selected = el;
+      if (!el) { hideToolbar(); hideHandle(); return; }
+      el.setAttribute('data-aur-sel', '1');
+      if (el.tagName === 'IMG') {
+        el.setAttribute('draggable', 'true');
+        showHandle(el);
+      } else {
+        hideHandle();
+      }
+      showToolbar(el);
+    }
+
+    function stopEditing(commitNow) {
+      if (!editing) return;
+      editing.removeAttribute('contenteditable');
+      editing.removeAttribute('spellcheck');
+      editing = null;
+      if (commitNow) syncBack();
+    }
+
+    function startEditing(el) {
+      if (el.tagName === 'IMG') return;
+      stopEditing(true);
+      editing = el;
+      el.setAttribute('contenteditable', 'true');
+      el.setAttribute('spellcheck', 'false');
+      el.focus();
+    }
+
+    /* ---------- Floating toolbar ---------- */
+    let toolbar = null;
+
+    const tbBtn = (act, title, label) =>
+      `<button data-act="${act}" title="${title}">${label}</button>`;
+
+    function toolbarHTML(isImg) {
+      if (isImg) {
+        return [
+          tbBtn('replace', 'Replace image', 'Replace'),
+          tbBtn('alt', 'Alt text', 'Alt'),
+          `<select data-act="imgalign" title="Alignment">
+            <option value="">Align</option><option value="left">Left</option>
+            <option value="center">Center</option><option value="right">Right</option></select>`,
+          tbBtn('pad', 'Padding', 'Pad'),
+          tbBtn('dup', 'Duplicate', 'Dup'),
+          tbBtn('del', 'Delete', 'Del')
+        ].join('');
+      }
+      return [
+        tbBtn('edit', 'Edit text (or double-click)', 'Edit'),
+        tbBtn('bold', 'Bold', '<b>B</b>'),
+        tbBtn('italic', 'Italic', '<i>I</i>'),
+        `<select data-act="fsize" title="Font size">
+          <option value="">Size</option>
+          ${[12, 13, 14, 16, 18, 20, 24, 28, 32, 40].map(s => `<option>${s}px</option>`).join('')}</select>`,
+        `<select data-act="ffam" title="Font family">
+          <option value="">Font</option>
+          <option value="Arial,Helvetica,sans-serif">Arial</option>
+          <option value="Georgia,serif">Georgia</option>
+          <option value="'Times New Roman',serif">Times</option>
+          <option value="Tahoma,sans-serif">Tahoma</option>
+          <option value="Verdana,sans-serif">Verdana</option>
+          <option value="'Courier New',monospace">Courier</option></select>`,
+        `<input type="color" data-act="color" title="Text color">`,
+        `<select data-act="align" title="Alignment">
+          <option value="">Align</option><option value="left">Left</option>
+          <option value="center">Center</option><option value="right">Right</option></select>`,
+        tbBtn('link', 'Set link', 'Link'),
+        tbBtn('dup', 'Duplicate', 'Dup'),
+        tbBtn('del', 'Delete', 'Del')
+      ].join('');
+    }
+
+    function showToolbar(el) {
+      hideToolbar();
+      toolbar = doc.createElement('div');
+      toolbar.id = '__aur_toolbar__';
+      toolbar.dir = 'ltr';
+      toolbar.innerHTML = toolbarHTML(el.tagName === 'IMG');
+      doc.body.appendChild(toolbar);
+
+      const rect = el.getBoundingClientRect();
+      const top = rect.top > 52 ? rect.top - 46 : rect.bottom + 8;
+      toolbar.style.top = Math.max(6, top) + 'px';
+      toolbar.style.left = Math.max(6, Math.min(rect.left, doc.documentElement.clientWidth - toolbar.offsetWidth - 6)) + 'px';
+
+      toolbar.addEventListener('mousedown', e => e.stopPropagation());
+      toolbar.addEventListener('click', e => {
+        const act = e.target.closest('[data-act]')?.dataset.act;
+        if (act && e.target.tagName !== 'SELECT' && e.target.type !== 'color') {
+          runAction(act);
+        }
+      });
+      toolbar.addEventListener('change', e => {
+        const act = e.target.dataset.act;
+        if (act) runAction(act, e.target.value);
+      });
+      toolbar.addEventListener('input', e => {
+        if (e.target.dataset.act === 'color') runAction('color', e.target.value);
+      });
+    }
+    function hideToolbar() {
+      doc?.getElementById('__aur_toolbar__')?.remove();
+      toolbar = null;
+    }
+
+    /* ---------- Actions ---------- */
+    function hasRangeSelection() {
+      const s = doc.getSelection();
+      return editing && s && !s.isCollapsed;
+    }
+
+    function runAction(act, value) {
+      const el = selected;
+      if (!el) return;
+      switch (act) {
+        case 'edit': startEditing(el); return;
+        case 'bold':
+          if (hasRangeSelection()) doc.execCommand('bold');
+          else el.style.fontWeight = (el.style.fontWeight === 'bold' || +getComputedStyleSafe(el, 'font-weight') >= 600) ? 'normal' : 'bold';
+          break;
+        case 'italic':
+          if (hasRangeSelection()) doc.execCommand('italic');
+          else el.style.fontStyle = el.style.fontStyle === 'italic' ? 'normal' : 'italic';
+          break;
+        case 'fsize': if (value) el.style.fontSize = value; break;
+        case 'ffam': if (value) el.style.fontFamily = value; break;
+        case 'color': if (value) el.style.color = value; break;
+        case 'align':
+          if (value) { el.style.textAlign = value; el.setAttribute('align', value); }
+          break;
+        case 'link': {
+          const existing = el.tagName === 'A' ? el.getAttribute('href') : '';
+          const url = prompt('Link URL:', existing || 'https://');
+          if (url === null) return;
+          if (el.tagName === 'A') el.setAttribute('href', url);
+          else if (hasRangeSelection()) doc.execCommand('createLink', false, url);
+          else {
+            const a = doc.createElement('a');
+            a.setAttribute('href', url);
+            while (el.firstChild) a.appendChild(el.firstChild);
+            el.appendChild(a);
+          }
+          break;
+        }
+        case 'replace': {
+          const url = prompt('New image URL:', el.getAttribute('src') || 'https://');
+          if (!url) return;
+          el.setAttribute('src', url);
+          break;
+        }
+        case 'alt': {
+          const alt = prompt('Alt text:', el.getAttribute('alt') || '');
+          if (alt === null) return;
+          el.setAttribute('alt', alt);
+          break;
+        }
+        case 'imgalign': {
+          if (!value) return;
+          // Email-safe alignment: align attribute on the containing cell,
+          // block/margin styles on the image itself. No floats, no flex.
+          const cell = el.closest('td');
+          if (cell) cell.setAttribute('align', value);
+          el.style.display = 'block';
+          el.style.marginLeft = value === 'left' ? '0' : 'auto';
+          el.style.marginRight = value === 'right' ? '0' : 'auto';
+          break;
+        }
+        case 'pad': {
+          const pad = prompt('Padding around image (px):', parseInt(el.style.padding) || 0);
+          if (pad === null) return;
+          el.style.padding = (parseInt(pad) || 0) + 'px';
+          break;
+        }
+        case 'dup': {
+          const copy = el.cloneNode(true);
+          copy.removeAttribute('data-aur-sel');
+          copy.removeAttribute('draggable');
+          copy.removeAttribute('contenteditable');
+          el.after(copy);
+          break;
+        }
+        case 'del':
+          stopEditing(false);
+          el.remove();
+          select(null);
+          syncBack();
+          return;
+      }
+      showToolbar(el); // reposition after layout changes
+      if (el.tagName === 'IMG') showHandle(el);
+      syncDebounced();
+    }
+
+    function getComputedStyleSafe(el, prop) {
+      try { return doc.defaultView.getComputedStyle(el).getPropertyValue(prop); }
+      catch { return ''; }
+    }
+
+    /* ---------- Image resize handle ---------- */
+    let handle = null;
+    function showHandle(img) {
+      hideHandle();
+      handle = doc.createElement('div');
+      handle.id = '__aur_handle__';
+      doc.body.appendChild(handle);
+      positionHandle(img);
+
+      let startX = 0, startW = 0, resizing = false;
+      handle.addEventListener('mousedown', e => {
+        e.preventDefault(); e.stopPropagation();
+        resizing = true;
+        startX = e.clientX;
+        startW = img.getBoundingClientRect().width;
+      });
+      doc.addEventListener('mousemove', e => {
+        if (!resizing) return;
+        const w = Math.max(24, Math.round(startW + (e.clientX - startX)));
+        img.style.width = w + 'px';
+        img.style.height = 'auto';
+        img.setAttribute('width', w);
+        img.removeAttribute('height');
+        positionHandle(img);
+      });
+      doc.addEventListener('mouseup', () => {
+        if (!resizing) return;
+        resizing = false;
+        showToolbar(img);
+        syncDebounced();
+      });
+    }
+    function positionHandle(img) {
+      if (!handle) return;
+      const r = img.getBoundingClientRect();
+      handle.style.top = (r.bottom - 7 + doc.documentElement.scrollTop) + 'px';
+      handle.style.left = (r.right - 7) + 'px';
+    }
+    function hideHandle() {
+      doc?.getElementById('__aur_handle__')?.remove();
+      handle = null;
+    }
+
+    /* ---------- Image drag & drop (structure-preserving) ---------- */
+    function dropContainer(node) {
+      let el = node.nodeType === 1 ? node : node.parentElement;
+      while (el && el !== doc.body) {
+        if ((el.tagName === 'TD' || el.tagName === 'DIV') && !el.closest('#__aur_toolbar__')) return el;
+        el = el.parentElement;
+      }
+      return doc.body;
+    }
+    function clearDropHints() {
+      doc.querySelectorAll('[data-aur-drop]').forEach(n => n.removeAttribute('data-aur-drop'));
+    }
+
+    /* ---------- Instrumentation ---------- */
+    function instrument() {
+      doc = previewFrame.contentDocument;
+      if (!doc || !doc.body) return;
+      selected = null; editing = null;
+
+      const style = doc.createElement('style');
+      style.id = '__aur_style__';
+      style.textContent = `
+        [data-aur-sel] { outline: 2px solid #6e7bff !important; outline-offset: 2px; }
+        [data-aur-drop] { outline: 2px dashed #35d0a0 !important; outline-offset: -2px; }
+        [contenteditable] { outline: 2px solid #35d0a0 !important; outline-offset: 2px; cursor: text; }
+        img { cursor: pointer; }
+        #__aur_toolbar__ {
+          position: fixed; z-index: 2147483647; display: flex; gap: 3px; align-items: center;
+          background: #191c24; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+          padding: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+          font-family: -apple-system, 'Segoe UI', sans-serif;
+        }
+        #__aur_toolbar__ button, #__aur_toolbar__ select, #__aur_toolbar__ input[type=color] {
+          height: 26px; border: none; border-radius: 6px; background: transparent;
+          color: #d9dfe8; font-size: 12px; cursor: pointer; padding: 0 8px;
+        }
+        #__aur_toolbar__ select { background: #232838; max-width: 76px; }
+        #__aur_toolbar__ input[type=color] { width: 30px; padding: 2px; }
+        #__aur_toolbar__ button:hover { background: #2c3245; }
+        #__aur_handle__ {
+          position: absolute; z-index: 2147483646; width: 14px; height: 14px;
+          background: #6e7bff; border: 2px solid #fff; border-radius: 50%;
+          cursor: nwse-resize; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        }
+      `;
+      doc.head.appendChild(style);
+
+      doc.addEventListener('click', e => {
+        const target = pickTarget(e.target);
+        if (e.target.closest('#__aur_toolbar__') || e.target.id === '__aur_handle__') return;
+        if (editing && (e.target === editing || editing.contains(e.target))) return;
+        stopEditing(true);
+        if (target) { e.preventDefault(); select(target); }
+        else select(null);
+      }, true);
+
+      doc.addEventListener('dblclick', e => {
+        const target = pickTarget(e.target);
+        if (target && target.tagName !== 'IMG') {
+          e.preventDefault();
+          select(target);
+          startEditing(target);
+        }
+      }, true);
+
+      doc.addEventListener('input', () => { if (editing) syncDebounced(); });
+
+      doc.addEventListener('keydown', e => {
+        const mod = e.metaKey || e.ctrlKey;
+        if (e.key === 'Escape') {
+          if (editing) { stopEditing(true); }
+          else select(null);
+          return;
+        }
+        if (mod && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          stopEditing(true);
+          e.shiftKey ? editHistory.redo() : editHistory.undo();
+          return;
+        }
+        if (mod && e.key.toLowerCase() === 'y') {
+          e.preventDefault(); editHistory.redo(); return;
+        }
+        if (!editing && selected && (e.key === 'Delete' || e.key === 'Backspace')) {
+          e.preventDefault(); runAction('del');
+        }
+      });
+
+      // Drag & drop for images: real DOM moves inside the table structure —
+      // the exported HTML never gains absolute positioning or transforms.
+      doc.addEventListener('dragstart', e => {
+        if (e.target === selected && selected?.tagName === 'IMG') {
+          dragging = selected;
+          e.dataTransfer.effectAllowed = 'move';
+        } else e.preventDefault();
+      });
+      doc.addEventListener('dragover', e => {
+        if (!dragging) return;
+        e.preventDefault();
+        clearDropHints();
+        const container = dropContainer(e.target);
+        if (container && !dragging.contains(container)) container.setAttribute('data-aur-drop', '1');
+      });
+      doc.addEventListener('drop', e => {
+        if (!dragging) return;
+        e.preventDefault();
+        clearDropHints();
+        const container = dropContainer(e.target);
+        if (container && !dragging.contains(container)) {
+          // Insert before the child block whose midpoint is below the cursor.
+          let ref = null;
+          for (const child of container.children) {
+            const r = child.getBoundingClientRect();
+            if (e.clientY < r.top + r.height / 2) { ref = child; break; }
+          }
+          container.insertBefore(dragging, ref);
+          select(dragging);
+          syncBack();
+        }
+        dragging = null;
+      });
+      doc.addEventListener('dragend', () => { clearDropHints(); dragging = null; });
+    }
+
+    /* ---------- Enable / disable ---------- */
+    function setEnabled(on) {
+      enabled = on;
+      $('#btn-visual-edit').setAttribute('aria-pressed', String(on));
+      if (on) {
+        editHistory.reset();
+        renderPreview();          // fresh load, then instrument via load event
+        toast('Visual editing on — click to select, double-click text to edit');
+      } else {
+        stopEditing(true);
+        select(null);
+        doc = null;
+        renderPreview();          // reload clean
+      }
+    }
+
+    previewFrame.addEventListener('load', () => { if (enabled) instrument(); });
+    $('#btn-visual-edit').addEventListener('click', () => setEnabled(!enabled));
+
+    return { get enabled() { return enabled; }, setEnabled, syncBack };
+  })();
 
   /* =========================================================
      File tree (sidebar) + File System Access API
