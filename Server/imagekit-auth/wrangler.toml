@@ -14,3 +14,7 @@ compatibility_date = "2026-01-01"
 # Tighten this to the origin your editor is served from, e.g.
 # ALLOWED_ORIGIN = "https://editor.example.com"
 ALLOWED_ORIGIN = "*"
+
+# Folder that /list is confined to. Must match (or be an ancestor of) the
+# editor's "Upload folder". Default is /email-assets on both sides.
+# BASE_PATH = "/email-assets"
