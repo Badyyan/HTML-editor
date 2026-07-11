@@ -3,7 +3,7 @@
    light-first with a dark theme. Same token names as before so every page
    (and the editor) keeps working. */
 
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("fonts.css");
 
 :root {
   --accent: #6366f1;
