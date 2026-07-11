@@ -423,34 +423,6 @@
   .tree {
     overflow-y: auto; padding: 0 6px 10px; flex: 1;
   }
-  .tree-empty {
-    padding: 8px 10px; font-size: 12px; color: var(--fg-dim); line-height: 1.5;
-  }
-  .tree-empty button {
-    margin-top: 6px;
-    background: var(--accent); color: var(--accent-ink); border: none;
-    padding: 6px 10px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer;
-  }
-  .node {
-    display: flex; align-items: center; gap: 6px;
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
-    font-size: 12.5px;
-    cursor: pointer;
-    color: var(--fg);
-    white-space: nowrap;
-  }
-  .node:hover { background: var(--current-line); }
-  .node.active { background: var(--selection); }
-  .node svg { width: 14px; height: 14px; flex: none; color: var(--fg-dim); }
-  .node .name { overflow: hidden; text-overflow: ellipsis; }
-  .node .depth-spacer { flex: none; }
-  .node .star {
-    margin-left: auto; opacity: 0; color: var(--warn); flex: none;
-    display: inline-flex; align-items: center; transition: opacity 0.15s ease;
-  }
-  .node .star svg { width: 13px; height: 13px; }
-  .node:hover .star, .node.favorited .star { opacity: 1; }
 
   .workspace-divider { background: var(--border); cursor: col-resize; }
 
@@ -1088,16 +1060,6 @@
     opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
-
-  .banner {
-    display: none; align-items: center; gap: 8px;
-    padding: 6px 12px; font-size: 11.5px; color: var(--fg-dim);
-    background: var(--current-line); border-bottom: 1px solid var(--border);
-  }
-  .banner.show { display: flex; }
-  .banner a, .banner button.link {
-    color: var(--accent); background: none; border: none; padding: 0; font-size: 11.5px; cursor: pointer;
-  }
 </style>
 
 <div id="app">
@@ -1116,17 +1078,21 @@
       <span class="label">UTM</span>
     </button>
     <div class="toolbar-sep"></div>
-    <button class="tbtn" id="btn-open-file" title="Open file (⌘O)">
+    <button class="tbtn" id="btn-open-file" title="Open HTML file (⌘O)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>
-      <span class="label">Open</span>
+      <span class="label">Open HTML File</span>
     </button>
-    <button class="tbtn" id="btn-open-folder" title="Open folder (⇧⌘O)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6a2 2 0 012-2h3l1.5 2H18a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>
-      <span class="label">Folder</span>
+    <button class="tbtn" id="btn-upload-file" title="Upload HTML file (⇧⌘O)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke-linecap="round"/></svg>
+      <span class="label">Upload HTML File</span>
     </button>
     <button class="tbtn" id="btn-save" title="Save (⌘S)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h11l3 3v13H5V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>
       <span class="label">Save</span>
+    </button>
+    <button class="tbtn" id="btn-save-as-template" title="Save current HTML as a reusable template">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12a1 1 0 011 1v17l-7-4-7 4V4a1 1 0 011-1z"/><path d="M9.5 9h5M12 6.5v5" stroke-linecap="round"/></svg>
+      <span class="label">Save as Template</span>
     </button>
     <div class="toolbar-sep"></div>
     <button class="tbtn" id="btn-find" title="Find & Replace (⌘F)">
@@ -1151,11 +1117,6 @@
     <button class="tbtn icon-only" id="btn-help" title="Help & shortcuts (⇧⌘/)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .5c0 1.5-2 1.7-2 3.4"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg>
     </button>
-  </div>
-
-  <div class="banner" id="fsa-banner">
-    <span>This browser can't save directly into folders — use <b>Save</b> to download files instead.</span>
-    <button class="link" id="banner-dismiss">Dismiss</button>
   </div>
 
   <div class="tabstrip">
@@ -1191,21 +1152,7 @@
 
   <div class="workspace" id="workspace">
     <div class="sidebar" id="sidebar">
-      <div class="sidebar-section" style="flex: 2;">
-        <div class="sidebar-heading">
-          <span id="project-name">Project Files</span>
-          <span class="grow"></span>
-          <button id="btn-new-file" title="New file">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-          </button>
-        </div>
-        <div class="tree" id="tree"></div>
-      </div>
-      <div class="sidebar-section" id="favorites-section" style="display:none;">
-        <div class="sidebar-heading">Favorites</div>
-        <div class="tree" id="favorites-tree"></div>
-      </div>
-      <div class="sidebar-section" id="assets-section" style="flex: 1.4;">
+      <div class="sidebar-section" id="assets-section" style="flex: 1;">
         <div class="sidebar-heading">
           Email Assets
           <span class="grow"></span>
@@ -1528,9 +1475,9 @@
 
 <div class="toast" id="toast"></div>
 
-<input type="file" id="file-input" multiple accept=".html,.htm,.css,.js,.mjs,.json,.txt,.svg,.md" style="display:none;">
+<input type="file" id="file-input" multiple accept=".html,.htm" style="display:none;">
+<input type="file" id="upload-input" multiple accept=".html,.htm" style="display:none;">
 <input type="file" id="asset-file-input" multiple accept="image/*" style="display:none;">
-<input type="file" id="folder-input" webkitdirectory multiple style="display:none;">
 
 <script>
 (() => {
@@ -1852,9 +1799,6 @@
     files: new Map(),   // id -> {id,name,path,content,language,dirty,handle,kind:'file'}
     order: [],          // tab order (ids)
     activeId: null,
-    rootHandle: null,
-    rootName: null,
-    fsaSupported: 'showDirectoryPicker' in window,
     device: 'desktop',
     findOpen: false
   };
@@ -2940,197 +2884,27 @@
   })();
 
   /* =========================================================
-     File tree (sidebar) + File System Access API
+     File open / upload (HTML only)
   ========================================================= */
-  function svgIcon(kind) {
-    const icons = {
-      folder: '<path d="M3 6a2 2 0 012-2h4l1.5 2H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V6z"/>',
-      html: '<path d="M8 4l-5 8 5 8M16 4l5 8-5 8"/>',
-      css: '<circle cx="12" cy="12" r="9"/><path d="M8 10h8M8 14h5"/>',
-      js: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9v6M15 9v3a1.5 1.5 0 01-3 0"/>',
-      file: '<path d="M6 3h9l4 4v14H6z"/>'
-    };
-    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${icons[kind] || icons.file}</svg>`;
-  }
-  function iconFor(name, isDir) {
-    if (isDir) return svgIcon('folder');
-    const ext = name.split('.').pop().toLowerCase();
-    if (['html','htm'].includes(ext)) return svgIcon('html');
-    if (ext === 'css') return svgIcon('css');
-    if (['js','mjs'].includes(ext)) return svgIcon('js');
-    return svgIcon('file');
-  }
-
-  const favorites = new Set(loadStore().favorites || []);
-  function persistFavorites() { saveStore({ favorites: Array.from(favorites) }); }
-
-  function renderTree() {
-    const tree = $('#tree');
-    tree.innerHTML = '';
-    $('#project-name').textContent = state.rootName || 'Project Files';
-
-    if (!state.rootEntries) {
-      tree.innerHTML = `<div class="tree-empty">
-        No folder open yet.<br>${state.fsaSupported ? 'Open a folder to browse and edit its files.' : "This browser can't browse real folders — open individual files instead."}
-        <br><button id="tree-open-btn">${state.fsaSupported ? 'Open Folder' : 'Open Files'}</button>
-      </div>`;
-      $('#tree-open-btn').addEventListener('click', () => {
-        state.fsaSupported ? openFolderPicker() : $('#folder-input').click();
-      });
-      renderFavorites();
+  async function openHtmlFilePicker() {
+    if ('showOpenFilePicker' in window) {
+      let handles;
+      try {
+        handles = await window.showOpenFilePicker({
+          types: [{ description: 'HTML files', accept: { 'text/html': ['.html', '.htm'] } }],
+          multiple: true
+        });
+      } catch (err) { if (err.name !== 'AbortError') toast('Could not open file'); return; }
+      for (const handle of handles) {
+        const file = await handle.getFile();
+        const content = await file.text();
+        const id = newFile(handle.name, content, { handle });
+        openTab(id);
+      }
       return;
     }
-    renderNodes(state.rootEntries, tree, 0);
-    renderFavorites();
+    $('#file-input').click();
   }
-
-  function renderNodes(nodes, container, depth) {
-    for (const node of nodes) {
-      const row = document.createElement('div');
-      row.className = 'node';
-      row.style.paddingLeft = (8 + depth * 14) + 'px';
-      row.innerHTML = `${iconFor(node.name, node.isDir)}<span class="name"></span>${!node.isDir ? '<span class="star"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 4l2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg></span>' : ''}`;
-      row.querySelector('.name').textContent = node.name;
-      if (favorites.has(node.path)) row.classList.add('favorited');
-      if (state.activePath === node.path) row.classList.add('active');
-      container.appendChild(row);
-
-      if (!node.isDir) {
-        row.addEventListener('click', () => openFileNode(node));
-        const star = row.querySelector('.star');
-        if (star) star.addEventListener('click', (e) => {
-          e.stopPropagation();
-          favorites.has(node.path) ? favorites.delete(node.path) : favorites.add(node.path);
-          persistFavorites();
-          renderTree();
-        });
-      } else {
-        row.addEventListener('click', () => {
-          node.collapsed = !node.collapsed;
-          renderTree();
-        });
-        row.querySelector('svg').style.transform = node.collapsed ? '' : '';
-      }
-      if (node.isDir && !node.collapsed && node.children) {
-        renderNodes(node.children, container, depth + 1);
-      }
-    }
-  }
-
-  function renderFavorites() {
-    const section = $('#favorites-section');
-    const tree = $('#favorites-tree');
-    tree.innerHTML = '';
-    if (!favorites.size) { section.style.display = 'none'; return; }
-    section.style.display = 'flex';
-    for (const path of favorites) {
-      const name = path.split('/').pop();
-      const row = document.createElement('div');
-      row.className = 'node';
-      row.innerHTML = `${iconFor(name, false)}<span class="name"></span>`;
-      row.querySelector('.name').textContent = name;
-      row.addEventListener('click', () => {
-        const node = findNodeByPath(state.rootEntries, path);
-        if (node) openFileNode(node);
-      });
-      tree.appendChild(row);
-    }
-  }
-  function findNodeByPath(nodes, path) {
-    for (const n of nodes || []) {
-      if (n.path === path) return n;
-      if (n.isDir) { const found = findNodeByPath(n.children, path); if (found) return found; }
-    }
-    return null;
-  }
-
-  async function openFileNode(node) {
-    for (const [id, f] of state.files) {
-      if (f.path === node.path) { openTab(id); return; }
-    }
-    let content = '';
-    try {
-      if (node.handle) {
-        const file = await node.handle.getFile();
-        content = await file.text();
-      } else if (node.file) {
-        content = await node.file.text();
-      }
-    } catch (err) { toast('Could not read file'); return; }
-    const id = newFile(node.name, content, { path: node.path, handle: node.handle || null });
-    state.activePath = node.path;
-    openTab(id);
-    renderTree();
-  }
-
-  async function buildTreeFromHandle(dirHandle, path) {
-    const entries = [];
-    for await (const [name, handle] of dirHandle.entries()) {
-      if (name.startsWith('.')) continue;
-      const entryPath = path + '/' + name;
-      if (handle.kind === 'directory') {
-        entries.push({ name, path: entryPath, isDir: true, handle, collapsed: false, children: await buildTreeFromHandle(handle, entryPath) });
-      } else {
-        entries.push({ name, path: entryPath, isDir: false, handle });
-      }
-    }
-    entries.sort((a, b) => (a.isDir === b.isDir) ? a.name.localeCompare(b.name) : (a.isDir ? -1 : 1));
-    return entries;
-  }
-
-  async function openFolderPicker() {
-    try {
-      const dirHandle = await window.showDirectoryPicker();
-      state.rootHandle = dirHandle;
-      state.rootName = dirHandle.name;
-      state.rootEntries = await buildTreeFromHandle(dirHandle, dirHandle.name);
-      renderTree();
-      toast(`Opened “${dirHandle.name}”`);
-    } catch (err) {
-      if (err.name !== 'AbortError') toast('Could not open folder');
-    }
-  }
-
-  function buildTreeFromFileList(fileList) {
-    const root = new Map();
-    const files = Array.from(fileList);
-    let rootName = '';
-    for (const file of files) {
-      const rel = file.webkitRelativePath || file.name;
-      const parts = rel.split('/');
-      rootName = parts[0];
-      let level = root;
-      let pathAcc = '';
-      for (let i = 1; i < parts.length; i++) {
-        const part = parts[i];
-        pathAcc += '/' + part;
-        const isLast = i === parts.length - 1;
-        if (isLast) {
-          level.set(part, { name: part, path: rootName + pathAcc, isDir: false, file });
-        } else {
-          if (!level.has(part)) level.set(part, { name: part, path: rootName + pathAcc, isDir: true, children: new Map() });
-          level = level.get(part).children;
-        }
-      }
-    }
-    function toArray(map) {
-      const arr = Array.from(map.values()).map(n => n.isDir ? { ...n, children: toArray(n.children) } : n);
-      arr.sort((a, b) => (a.isDir === b.isDir) ? a.name.localeCompare(b.name) : (a.isDir ? -1 : 1));
-      return arr;
-    }
-    return { name: rootName, entries: toArray(root) };
-  }
-
-  $('#folder-input').addEventListener('change', (e) => {
-    if (!e.target.files.length) return;
-    const { name, entries } = buildTreeFromFileList(e.target.files);
-    state.rootHandle = null;
-    state.rootName = name;
-    state.rootEntries = entries;
-    renderTree();
-    $('#fsa-banner').classList.add('show');
-    e.target.value = '';
-  });
 
   $('#file-input').addEventListener('change', async (e) => {
     for (const file of e.target.files) {
@@ -3141,29 +2915,20 @@
     e.target.value = '';
   });
 
-  $('#btn-new-tab').addEventListener('click', () => newUntitledTab());
-  $('#btn-open-file').addEventListener('click', () => $('#file-input').click());
-  $('#btn-open-folder').addEventListener('click', () => {
-    state.fsaSupported ? openFolderPicker() : $('#folder-input').click();
-  });
-  $('#btn-new-file').addEventListener('click', async () => {
-    const name = prompt('New file name', 'untitled.html');
-    if (!name) return;
-    if (state.rootHandle) {
-      try {
-        const handle = await state.rootHandle.getFileHandle(name, { create: true });
-        const path = state.rootName + '/' + name;
-        const id = newFile(name, '', { path, handle });
-        state.rootEntries.push({ name, path, isDir: false, handle });
-        renderTree();
-        openTab(id);
-        return;
-      } catch { toast('Could not create file'); return; }
+  $('#upload-input').addEventListener('change', async (e) => {
+    const count = e.target.files.length;
+    for (const file of e.target.files) {
+      const content = await file.text();
+      const id = newFile(file.name, content, { dirty: false });
+      openTab(id);
     }
-    const id = newFile(name, '', { dirty: false });
-    openTab(id);
+    e.target.value = '';
+    if (count) toast(count === 1 ? 'HTML file uploaded' : `${count} HTML files uploaded`);
   });
-  $('#tree-open-btn')?.addEventListener('click', () => {});
+
+  $('#btn-new-tab').addEventListener('click', () => newUntitledTab());
+  $('#btn-open-file').addEventListener('click', () => openHtmlFilePicker());
+  $('#btn-upload-file').addEventListener('click', () => $('#upload-input').click());
 
   /* =========================================================
      Save / Export
@@ -3218,7 +2983,6 @@
   }
 
   $('#btn-save').addEventListener('click', saveActive);
-  $('#banner-dismiss').addEventListener('click', () => $('#fsa-banner').classList.remove('show'));
 
   /* =========================================================
      Find & Replace
@@ -3399,7 +3163,7 @@
 
   /* ---- Help modal ---- */
   const SHORTCUTS = [
-    [`${modLabel}N`, 'New tab'], [`${modLabel}O`, 'Open file'], [`${modLabel}⇧O`, 'Open folder'],
+    [`${modLabel}N`, 'New tab'], [`${modLabel}O`, 'Open HTML file'], [`${modLabel}⇧O`, 'Upload HTML file'],
     [`${modLabel}S`, 'Save'], [`${modLabel}⇧S`, 'Save As'], [`${modLabel}W`, 'Close tab'],
     [`${modLabel}F`, 'Find & Replace'], [`${modLabel}G / ⇧${modLabel}G`, 'Next / previous match'],
     [`${modLabel}D`, 'Select word / next occurrence'], [`${modLabel}R`, 'Refresh preview'],
@@ -4001,14 +3765,14 @@ ${rows}
     ];
 
     /* ---- Template library ---- */
-    function tplCard(name, designObj, deletable, onLoad, onDelete) {
+    function tplCard(name, previewHtml, deletable, onLoad, onDelete) {
       const card = document.createElement('div');
       card.className = 'tpl-card';
       card.innerHTML = `
         <div class="tpl-thumb"><iframe loading="lazy" title="${attr(name)} preview"></iframe></div>
         <div class="tpl-meta"><span class="tpl-name"></span>${deletable ? '<button class="tpl-del" title="Delete template" aria-label="Delete template"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' : ''}</div>`;
       card.querySelector('.tpl-name').textContent = name;
-      card.querySelector('iframe').srcdoc = buildEmailHTML(designObj);
+      card.querySelector('iframe').srcdoc = previewHtml;
       card.addEventListener('click', (e) => {
         if (e.target.closest('.tpl-del')) { e.stopPropagation(); onDelete(); return; }
         onLoad();
@@ -4021,14 +3785,15 @@ ${rows}
       starters.innerHTML = '';
       for (const s of STARTERS) {
         const d = { ...blankDesign(), blocks: s.build() };
-        starters.appendChild(tplCard(s.name, d, false, () => loadDesign(d, s.name)));
+        starters.appendChild(tplCard(s.name, buildEmailHTML(d), false, () => loadDesign(d, s.name)));
       }
       const mine = $('#tpl-mine');
       mine.innerHTML = '';
       $('#tpl-mine-empty').style.display = templates.length ? 'none' : '';
       for (const t of templates) {
-        mine.appendChild(tplCard(t.name, t.design, true,
-          () => loadDesign(JSON.parse(JSON.stringify(t.design)), t.name),
+        const previewHtml = t.design ? buildEmailHTML(t.design) : (t.html || '');
+        mine.appendChild(tplCard(t.name, previewHtml, true,
+          () => applyTemplate(t),
           () => {
             if (!confirm(`Delete template “${t.name}”?`)) return;
             templates = templates.filter(x => x.id !== t.id);
@@ -4046,6 +3811,18 @@ ${rows}
       setMode(true);
       commit();
       toast(`Loaded “${name}” — it’s all editable`);
+    }
+
+    // Templates saved from the Code editor carry raw HTML instead of a
+    // block design — those open as a new Code tab rather than the Builder.
+    function applyTemplate(t) {
+      if (t.design) { loadDesign(JSON.parse(JSON.stringify(t.design)), t.name); return; }
+      $('#templates-backdrop').classList.remove('open');
+      const fname = /\.html?$/i.test(t.name) ? t.name : `${t.name}.html`;
+      const id = newFile(fname, t.html, { dirty: true });
+      setMode(false);
+      openTab(id);
+      toast(`Loaded “${t.name}” — it’s all editable`);
     }
 
     /* ---- Mode switching ---- */
@@ -4072,6 +3849,15 @@ ${rows}
       const name = prompt('Template name:', 'My template');
       if (!name) return;
       templates.push({ id: uid(), name, design: JSON.parse(JSON.stringify(design)), updated: Date.now() });
+      persist();
+      toast(`Template “${name}” saved`);
+    });
+    $('#btn-save-as-template').addEventListener('click', () => {
+      const f = activeFile();
+      if (!f || !f.content.trim()) { toast('Nothing to save yet'); return; }
+      const name = prompt('Template name:', f.name.replace(/\.html?$/i, '') || 'My template');
+      if (!name) return;
+      templates.push({ id: uid(), name, html: f.content, updated: Date.now() });
       persist();
       toast(`Template “${name}” saved`);
     });
@@ -4846,7 +4632,7 @@ ${rows}
     }
     switch (e.key.toLowerCase()) {
       case 'n': e.preventDefault(); newUntitledTab(); break;
-      case 'o': e.preventDefault(); e.shiftKey ? (state.fsaSupported ? openFolderPicker() : $('#folder-input').click()) : $('#file-input').click(); break;
+      case 'o': e.preventDefault(); e.shiftKey ? $('#upload-input').click() : openHtmlFilePicker(); break;
       case 's': e.preventDefault(); e.shiftKey ? saveAsActive() : saveActive(); break;
       case 'w': e.preventDefault(); if (state.activeId) closeTab(state.activeId); break;
       case 'f': e.preventDefault(); openFindBar(); break;
@@ -4880,7 +4666,6 @@ ${rows}
     if (wantsFresh) {
       history.replaceState(null, '', location.pathname + location.hash);
       newUntitledTab();
-      renderTree();
       return;
     }
 
@@ -4896,7 +4681,6 @@ ${rows}
     } else {
       newUntitledTab();
     }
-    renderTree();
   }
 
   init();
