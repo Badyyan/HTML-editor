@@ -4652,9 +4652,13 @@ ${rows}
         const res = await fetch(listUrl);
         if (!res.ok) throw new Error('list returned ' + res.status);
         const files = await res.json();
-        cloud = (Array.isArray(files) ? files : []).map(f => ({
-          name: f.name, url: f.url, thumb: f.thumbnail || f.thumbnailUrl || f.url
-        }));
+        // The ImageKit list API can return folder/version entries alongside
+        // images; those have no served URL, so drop them to avoid broken rows.
+        cloud = (Array.isArray(files) ? files : [])
+          .filter(f => f && f.url && (f.type == null || f.type === 'file'))
+          .map(f => ({
+            name: f.name, url: f.url, thumb: f.thumbnail || f.thumbnailUrl || f.url
+          }));
         render();
         toast(`Folder ${cfg.folder}: ${cloud.length} image${cloud.length === 1 ? '' : 's'}`);
       } catch (err) {
