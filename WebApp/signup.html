@@ -7,6 +7,16 @@
 <title>Sign up — HTMLStudio</title>
 <link rel="stylesheet" href="aurora.css">
 <script src="auth.js"></script>
+<script>
+  // Match whichever light/dark preference was set anywhere else in the
+  // app, before first paint, so this page never looks like it "reverted".
+  (function () {
+    try {
+      const t = localStorage.getItem('aurora-theme');
+      if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  })();
+</script>
 </head>
 <body>
 <nav class="site-nav">

@@ -21,7 +21,7 @@
   /* ---------- Design tokens ---------- */
   :root {
     --ink: #101014;
-    --paper: #f7f7f9;
+    --paper: #fdfdfd;
     --accent: #6366f1;
     --accent-ink: #ffffff;
     --live: #10b981;
@@ -42,12 +42,12 @@
   /* Aurora Dark (default) */
   :root, :root[data-theme="dark"] {
     --bg: var(--ink);
-    --fg: #d6dee7;
-    --fg-dim: #8b93a3;
+    --fg: #f2f2f5;
+    --fg-dim: #a3a3ad;
     --panel: #17171c;
     --sidebar: #131318;
     --toolbar: rgba(22, 24, 31, 0.86);
-    --border: rgba(255, 255, 255, 0.08);
+    --border: rgba(255, 255, 255, 0.09);
     --current-line: #232732;
     --selection: #31445e;
     --gutter-bg: #16181f;
@@ -72,12 +72,12 @@
   @media (prefers-color-scheme: light) {
     :root:not([data-theme]) {
       --bg: var(--paper);
-      --fg: #24292f;
-      --fg-dim: #57606a;
+      --fg: #141417;
+      --fg-dim: #5b5b66;
       --panel: #ffffff;
       --sidebar: #f4f4f6;
       --toolbar: rgba(255, 255, 255, 0.86);
-      --border: rgba(15, 20, 30, 0.09);
+      --border: rgba(20, 20, 23, 0.08);
       --current-line: #f2f5fa;
       --selection: #bcd6f5;
       --gutter-bg: #f6f7fa;
@@ -102,12 +102,12 @@
 
   :root[data-theme="light"] {
     --bg: var(--paper);
-    --fg: #24292f;
-    --fg-dim: #57606a;
+    --fg: #141417;
+    --fg-dim: #5b5b66;
     --panel: #ffffff;
     --sidebar: #f4f4f6;
     --toolbar: rgba(255, 255, 255, 0.86);
-    --border: rgba(15, 20, 30, 0.09);
+    --border: rgba(20, 20, 23, 0.08);
     --current-line: #f2f5fa;
     --selection: #bcd6f5;
     --gutter-bg: #f6f7fa;
@@ -129,33 +129,36 @@
     --tok-entity: #8250df;
   }
 
+  /* Midnight: a deeper, violet-leaning dark alternate — built from the
+     same accent-2 (#8b5cf6) family as the rest of the brand, not a
+     leftover pre-redesign palette. */
   :root[data-theme="midnight"] {
-    --bg: #12131c;
-    --fg: #c8cce0;
-    --fg-dim: #7f87a8;
-    --panel: #171826;
-    --sidebar: #101018;
-    --toolbar: rgba(16, 16, 24, 0.86);
+    --bg: #0d0b16;
+    --fg: #e4e1ec;
+    --fg-dim: #948fb0;
+    --panel: #17141f;
+    --sidebar: #110e19;
+    --toolbar: rgba(13, 11, 22, 0.86);
     --border: rgba(255, 255, 255, 0.08);
-    --current-line: #1c1e30;
-    --selection: #303a6e;
-    --gutter-bg: #101018;
-    --gutter-fg: #4c5270;
-    --caret: #8b9bff;
+    --current-line: #1e1a2b;
+    --selection: #3730a3;
+    --gutter-bg: #110e19;
+    --gutter-fg: #6f6a8a;
+    --caret: #a78bfa;
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 
-    --tok-tag: #8b9bff;
-    --tok-attr: #f2b36b;
-    --tok-attrval: #8fe0c0;
-    --tok-comment: #5a6080;
-    --tok-keyword: #e77cb6;
-    --tok-string: #8fe0c0;
-    --tok-number: #f2b36b;
-    --tok-selector: #8b9bff;
-    --tok-property: #7fd4f5;
-    --tok-value: #f2b36b;
-    --tok-doctype: #b48bff;
-    --tok-entity: #b48bff;
+    --tok-tag: #a78bfa;
+    --tok-attr: #fbbf24;
+    --tok-attrval: #67e8f9;
+    --tok-comment: #766f8d;
+    --tok-keyword: #f472b6;
+    --tok-string: #67e8f9;
+    --tok-number: #fbbf24;
+    --tok-selector: #a78bfa;
+    --tok-property: #7dd3fc;
+    --tok-value: #fbbf24;
+    --tok-doctype: #c4b5fd;
+    --tok-entity: #c4b5fd;
   }
 
   * { box-sizing: border-box; }
@@ -1776,6 +1779,38 @@
   const settings = Object.assign({}, DEFAULT_SETTINGS, loadStore().settings || {});
   function persistSettings() { saveStore({ settings }); }
 
+  /*
+   * Site-wide theme reconciliation.
+   * The landing/auth/dashboard pages share one light/dark switch under
+   * localStorage['aurora-theme']. The editor has three accent choices
+   * (Aurora Dark / Aurora Light / Midnight) for syntax highlighting, but
+   * "Aurora Dark" and "Midnight" are both dark-family, "Aurora Light" is
+   * the only light one. Without reconciliation, flipping the switch on
+   * one page and then opening another page — or vice versa — reads as
+   * the UI "reverting", because each page was trusting its own stale
+   * stored value. This keeps every page's base agreeing with whichever
+   * page the user touched last.
+   */
+  const THEME_BASE = { dark: 'dark', midnight: 'dark', light: 'light' };
+  function siteThemeBase() {
+    try { return localStorage.getItem('aurora-theme'); } catch { return null; }
+  }
+  function setSiteThemeBase(base) {
+    try { localStorage.setItem('aurora-theme', base); } catch {}
+  }
+  (function reconcileThemeOnLoad() {
+    const base = siteThemeBase();
+    if (!base) { setSiteThemeBase(THEME_BASE[settings.theme] || 'dark'); return; }
+    if (THEME_BASE[settings.theme] !== base) {
+      // The site-wide switch disagrees with this browser's last editor
+      // choice — the global switch wins, and we drop to the plain
+      // Dark/Light accent (never silently apply Midnight, which the user
+      // didn't explicitly ask for here) so the result is predictable.
+      settings.theme = base === 'dark' ? 'dark' : 'light';
+      persistSettings();
+    }
+  })();
+
   /* =========================================================
      Starter content
   ========================================================= */
@@ -3296,9 +3331,9 @@
      Theme / settings modal
   ========================================================= */
   const THEMES = [
-    { id: 'dark', name: 'Aurora Dark', bg: '#1e2227', bars: ['#7ee787', '#ffa657', '#a5d6ff'] },
-    { id: 'light', name: 'Aurora Light', bg: '#ffffff', bars: ['#146329', '#953800', '#0a4ea3'] },
-    { id: 'midnight', name: 'Midnight', bg: '#12131c', bars: ['#8b9bff', '#f2b36b', '#8fe0c0'] }
+    { id: 'dark', name: 'Aurora Dark', bg: '#101014', bars: ['#7ee787', '#ffa657', '#a5d6ff'] },
+    { id: 'light', name: 'Aurora Light', bg: '#fdfdfd', bars: ['#146329', '#953800', '#0a4ea3'] },
+    { id: 'midnight', name: 'Midnight', bg: '#0d0b16', bars: ['#a78bfa', '#fbbf24', '#67e8f9'] }
   ];
   function applyTheme() {
     document.documentElement.setAttribute('data-theme', settings.theme);
@@ -3313,6 +3348,9 @@
       card.querySelector('.name').textContent = t.name;
       card.addEventListener('click', () => {
         settings.theme = t.id; persistSettings(); applyTheme(); renderThemeGrid(); doHighlight();
+        // Keep the rest of the site (landing/auth/dashboard) on the same
+        // light/dark base so leaving the editor never looks like a revert.
+        setSiteThemeBase(THEME_BASE[t.id]);
       });
       grid.appendChild(card);
     });
