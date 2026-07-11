@@ -1,4 +1,4 @@
-# Aurora — Zero-Install Email Studio (Web)
+# HTMLStudio — Zero-Install Email Studio (Web)
 
 A complete static website: marketing landing page, account flow, dashboard,
 and the full editor. No build step — every page is plain HTML/CSS/JS served

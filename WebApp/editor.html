@@ -1,6 +1,9 @@
 <meta charset="UTF-8">
-<title>Aurora — Editor</title>
+<title>HTMLStudio — Editor</title>
 <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>
 /* Auth guard: the editor is reached through the dashboard. If storage is
@@ -17,16 +20,16 @@
 <style>
   /* ---------- Design tokens ---------- */
   :root {
-    --ink: #14161c;
-    --paper: #fafbfe;
-    --accent: #6e7bff;
+    --ink: #101014;
+    --paper: #f7f7f9;
+    --accent: #6366f1;
     --accent-ink: #ffffff;
-    --live: #35d0a0;
-    --warn: #f2b84b;
-    --danger: #ef6b6b;
+    --live: #10b981;
+    --warn: #f59e0b;
+    --danger: #f43f5e;
 
-    --ui-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-    --code-font: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --ui-font: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --code-font: "JetBrains Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
 
     --radius-sm: 6px;
     --radius-md: 9px;
@@ -41,15 +44,15 @@
     --bg: var(--ink);
     --fg: #d6dee7;
     --fg-dim: #8b93a3;
-    --panel: #1b1e26;
-    --sidebar: #16181f;
+    --panel: #17171c;
+    --sidebar: #131318;
     --toolbar: rgba(22, 24, 31, 0.86);
     --border: rgba(255, 255, 255, 0.08);
     --current-line: #232732;
     --selection: #31445e;
     --gutter-bg: #16181f;
     --gutter-fg: #545b6b;
-    --caret: #7c9bff;
+    --caret: #818cf8;
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 
     --tok-tag: #7ee787;
@@ -72,14 +75,14 @@
       --fg: #24292f;
       --fg-dim: #57606a;
       --panel: #ffffff;
-      --sidebar: #f3f4f7;
+      --sidebar: #f4f4f6;
       --toolbar: rgba(255, 255, 255, 0.86);
       --border: rgba(15, 20, 30, 0.09);
       --current-line: #f2f5fa;
       --selection: #bcd6f5;
       --gutter-bg: #f6f7fa;
       --gutter-fg: #9aa4b2;
-      --caret: #3457d5;
+      --caret: #4f46e5;
       --shadow: 0 12px 28px rgba(20, 24, 35, 0.12);
 
       --tok-tag: #146329;
@@ -102,14 +105,14 @@
     --fg: #24292f;
     --fg-dim: #57606a;
     --panel: #ffffff;
-    --sidebar: #f3f4f7;
+    --sidebar: #f4f4f6;
     --toolbar: rgba(255, 255, 255, 0.86);
     --border: rgba(15, 20, 30, 0.09);
     --current-line: #f2f5fa;
     --selection: #bcd6f5;
     --gutter-bg: #f6f7fa;
     --gutter-fg: #9aa4b2;
-    --caret: #3457d5;
+    --caret: #4f46e5;
     --shadow: 0 12px 28px rgba(20, 24, 35, 0.12);
 
     --tok-tag: #146329;
@@ -1096,7 +1099,7 @@
 
 <div id="app">
   <div class="toolbar">
-    <div class="brand"><span class="dot"></span>Aurora Editor</div>
+    <div class="brand"><span class="dot"></span>HTMLStudio Editor</div>
     <div class="mode-switch" role="tablist" aria-label="Editor mode">
       <button id="mode-code" class="active" role="tab" aria-selected="true">Code</button>
       <button id="mode-builder" role="tab" aria-selected="false">Builder</button>
@@ -1303,7 +1306,7 @@
 <div class="modal-backdrop" id="help-backdrop">
   <div class="modal">
     <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="6" width="20" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" stroke-linecap="round"/></svg></span> Keyboard Shortcuts</h2>
-    <p class="sub">Aurora Editor runs entirely in this browser tab — nothing to install.</p>
+    <p class="sub">HTMLStudio Editor runs entirely in this browser tab — nothing to install.</p>
     <div class="kv-grid" id="shortcut-grid"></div>
     <ul class="tip-list">
       <li>Type <code>&lt;</code> for tag completions, or a snippet trigger like <code>html5</code> then Tab.</li>
@@ -1784,14 +1787,14 @@
   <title>New Page</title>
   <style>
     body { font-family: -apple-system, sans-serif; margin: 40px; color: #24292f; }
-    h1 { color: #6e7bff; }
+    h1 { color: #6366f1; }
   </style>
 </head>
 <body>
   <h1>Hello, world!</h1>
   <p>Edit this page and watch the preview update live.</p>
   <script>
-    console.log("Aurora Editor says hi");
+    console.log("HTMLStudio Editor says hi");
   <\/script>
 </body>
 </html>
@@ -2767,9 +2770,9 @@
       const style = doc.createElement('style');
       style.id = '__aur_style__';
       style.textContent = `
-        [data-aur-sel] { outline: 2px solid #6e7bff !important; outline-offset: 2px; }
-        [data-aur-drop] { outline: 2px dashed #35d0a0 !important; outline-offset: -2px; }
-        [contenteditable] { outline: 2px solid #35d0a0 !important; outline-offset: 2px; cursor: text; }
+        [data-aur-sel] { outline: 2px solid #6366f1 !important; outline-offset: 2px; }
+        [data-aur-drop] { outline: 2px dashed #10b981 !important; outline-offset: -2px; }
+        [contenteditable] { outline: 2px solid #10b981 !important; outline-offset: 2px; cursor: text; }
         img { cursor: pointer; }
         #__aur_toolbar__ {
           position: fixed; z-index: 2147483647; display: flex; gap: 3px; align-items: center;
@@ -2786,7 +2789,7 @@
         #__aur_toolbar__ button:hover { background: #2c3245; }
         #__aur_handle__ {
           position: absolute; z-index: 2147483646; width: 14px; height: 14px;
-          background: #6e7bff; border: 2px solid #fff; border-radius: 50%;
+          background: #6366f1; border: 2px solid #fff; border-radius: 50%;
           cursor: nwse-resize; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
         }
       `;
@@ -3401,7 +3404,7 @@
     function placeholder(w, h, label) {
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
         <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#6e7bff"/><stop offset="1" stop-color="#35d0a0"/></linearGradient></defs>
+        <stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#10b981"/></linearGradient></defs>
         <rect width="100%" height="100%" rx="6" fill="url(#g)" opacity="0.85"/>
         <text x="50%" y="52%" fill="#fff" font-family="sans-serif" font-size="15"
           text-anchor="middle" dominant-baseline="middle">${label}</text></svg>`;
@@ -3410,7 +3413,7 @@
 
     const btnHtml = (p) =>
       `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${attr(p.align || 'center')}"><tr>
-        <td style="background:${attr(p.btnBg || '#6e7bff')};border-radius:${Number(p.btnRadius ?? 8)}px;">
+        <td style="background:${attr(p.btnBg || '#6366f1')};border-radius:${Number(p.btnRadius ?? 8)}px;">
         <a href="${attr(p.btnUrl || '#')}" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${attr(p.btnColor || '#ffffff')};text-decoration:none;">${esc(p.btnLabel || 'Button')}</a>
         </td></tr></table>`;
 
@@ -3439,7 +3442,7 @@
         defaults: {
           imageUrl: placeholder(600, 240, 'Hero image'), headline: 'Big announcement',
           sub: 'A short supporting sentence that sells the click.',
-          btnLabel: 'Get started', btnUrl: 'https://', btnBg: '#6e7bff', btnColor: '#ffffff',
+          btnLabel: 'Get started', btnUrl: 'https://', btnBg: '#6366f1', btnColor: '#ffffff',
           btnRadius: 8, bg: '#ffffff', color: '#111827', align: 'center'
         },
         fields: [
@@ -3476,7 +3479,7 @@
       },
       button: {
         label: 'Button', icon: 'M5 9h14v6H5z',
-        defaults: { btnLabel: 'Shop now', btnUrl: 'https://', btnBg: '#6e7bff', btnColor: '#ffffff', btnRadius: 8, align: 'center', bg: '#ffffff' },
+        defaults: { btnLabel: 'Shop now', btnUrl: 'https://', btnBg: '#6366f1', btnColor: '#ffffff', btnRadius: 8, align: 'center', bg: '#ffffff' },
         fields: [
           { k: 'btnLabel', label: 'Label', t: 'text' },
           { k: 'btnUrl', label: 'URL', t: 'text' },
@@ -3524,7 +3527,7 @@
             <td width="4%"></td>
             <td style="vertical-align:top;font-family:Arial,Helvetica,sans-serif;">
               <div style="font-size:16px;font-weight:bold;color:#111827;">${esc(p.title)}</div>
-              <div style="font-size:15px;color:#6e7bff;font-weight:bold;padding:4px 0 8px;">${esc(p.price)}</div>
+              <div style="font-size:15px;color:#6366f1;font-weight:bold;padding:4px 0 8px;">${esc(p.price)}</div>
               <div style="font-size:13px;line-height:1.55;color:#4b5563;padding-bottom:14px;">${nl2br(p.desc)}</div>
               ${btnHtml({ ...p, align: 'left' })}
             </td></tr></table>`, '18px 28px', p.bg)

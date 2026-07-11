@@ -1,301 +1,615 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="dark">
-<title>Aurora — The zero-install email studio</title>
-<meta name="description" content="Design, code, and ship beautiful emails right in your browser. Drag-and-drop builder, live preview, template library, and UTM tracking — nothing to install.">
+<meta name="color-scheme" content="light">
+<title>HTMLStudio — The zero-install email studio</title>
+<meta name="description" content="Design, code, and ship beautiful emails right in your browser. Drag-and-drop builder, real code editor, live preview, template library, and UTM tracking — nothing to install.">
 <link rel="stylesheet" href="aurora.css">
 <script src="auth.js"></script>
 <style>
-  /* Landing commits to the dark aurora world — the product's identity. */
-  body {
-    background:
-      radial-gradient(1100px 520px at 78% -10%, rgba(110, 123, 255, 0.16), transparent 60%),
-      radial-gradient(900px 500px at 12% 8%, rgba(53, 208, 160, 0.10), transparent 55%),
-      var(--bg-deep);
-    overflow-x: hidden;
-  }
+  /* Landing commits to the light, premium HTMLStudio look. */
+  body { overflow-x: hidden; }
 
+  /* ---------- Hero ---------- */
   .hero {
-    max-width: 1080px; margin: 0 auto; padding: 64px 24px 30px;
-    display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center;
+    position: relative; overflow: hidden; padding: 84px 24px 0;
+  }
+  .hero-bg { position: absolute; inset: 0; pointer-events: none; }
+  .hero-bg .glow-a {
+    position: absolute; top: -180px; left: 50%; transform: translateX(-50%);
+    width: 900px; height: 600px;
+    background: radial-gradient(closest-side, rgba(99, 102, 241, 0.16), transparent 70%);
+  }
+  .hero-bg .glow-b {
+    position: absolute; top: 120px; left: 8%; width: 420px; height: 420px;
+    background: radial-gradient(closest-side, rgba(139, 92, 246, 0.12), transparent 70%);
+  }
+  .hero-bg .glow-c {
+    position: absolute; top: 60px; right: 4%; width: 480px; height: 480px;
+    background: radial-gradient(closest-side, rgba(56, 189, 248, 0.10), transparent 70%);
+  }
+  .hero-bg .grid-lines {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(19, 19, 22, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(19, 19, 22, 0.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
+  }
+  .hero-inner { position: relative; max-width: 880px; margin: 0 auto; text-align: center; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 999px;
+    border: 1px solid rgba(99, 102, 241, 0.25); background: rgba(99, 102, 241, 0.06);
+    font-size: 13px; font-weight: 500; color: var(--accent-hover);
+    animation: fade-up 0.7s 0.05s both;
   }
   .hero h1 {
-    font-size: clamp(32px, 4.6vw, 50px); font-weight: 800;
-    letter-spacing: -0.03em; line-height: 1.08; margin: 0 0 18px;
-    text-wrap: balance;
-  }
-  .hero h1 .glow {
-    background: linear-gradient(100deg, var(--accent), var(--live));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+    font-size: clamp(40px, 6.4vw, 72px); line-height: 1.04; letter-spacing: -0.035em;
+    font-weight: 700; margin: 22px 0 0; animation: fade-up 0.7s 0.12s both;
   }
   .hero .lede {
-    font-size: 16.5px; color: var(--fg-dim); line-height: 1.65;
-    margin: 0 0 28px; max-width: 46ch;
+    max-width: 580px; margin: 22px auto 0;
+    font-size: clamp(16px, 2vw, 18.5px); line-height: 1.6; color: var(--fg-dim);
+    text-wrap: pretty; animation: fade-up 0.7s 0.2s both;
   }
-  .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-  .hero-ctas .fine { font-size: 12px; color: var(--fg-dim); flex-basis: 100%; margin-top: 2px; }
-
-  .hero-art { position: relative; min-width: 0; }
-  .hero-art svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.5)); }
-
-  .logos-strip {
-    max-width: 1080px; margin: 26px auto 0; padding: 0 24px;
-    display: flex; gap: 10px 26px; flex-wrap: wrap; align-items: center;
-    color: var(--fg-dim); font-size: 12.5px;
+  .hero-ctas {
+    display: flex; gap: 14px; justify-content: center; margin-top: 32px; flex-wrap: wrap;
+    animation: fade-up 0.7s 0.28s both;
   }
-  .logos-strip .pill {
-    border: 1px solid var(--border); border-radius: 999px; padding: 5px 13px;
-    background: color-mix(in srgb, var(--panel) 70%, transparent);
-    white-space: nowrap;
+  .hero .fine { margin-top: 18px; font-size: 13px; color: var(--fg-faint); animation: fade-up 0.7s 0.34s both; }
+
+  @keyframes fade-up { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes float-a { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  @keyframes float-b { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(10px) rotate(-1.5deg); } }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  /* ---------- Hero product mockup (pure HTML/CSS, mirrors the real editor) ---------- */
+  .mock-wrap { position: relative; max-width: 1060px; margin: 64px auto 0; animation: fade-up 0.9s 0.4s both; }
+  .mock-underglow {
+    position: absolute; left: 50%; bottom: -40px; transform: translateX(-50%);
+    width: 80%; height: 200px; filter: blur(20px);
+    background: radial-gradient(closest-side, rgba(99, 102, 241, 0.28), transparent 72%);
+  }
+  .chip {
+    position: absolute; z-index: 3; display: flex; align-items: center; gap: 10px;
+    background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px;
+    box-shadow: 0 16px 40px rgba(19, 19, 22, 0.14);
+  }
+  .chip-l { top: 64px; left: -14px; animation: float-a 6s ease-in-out infinite; }
+  .chip-r { top: 120px; right: -10px; animation: float-b 7s ease-in-out infinite; }
+  .chip .chip-ico {
+    width: 26px; height: 26px; border-radius: 8px; flex: none;
+    display: grid; place-items: center;
+  }
+  .chip b { display: block; font-size: 12.5px; font-weight: 600; }
+  .chip small { display: block; font-size: 11.5px; color: var(--fg-dim); }
+  .mock-window {
+    position: relative; z-index: 2; border-radius: 18px; border: 1px solid var(--border);
+    background: #fff; overflow: hidden;
+    box-shadow: 0 40px 90px -20px rgba(19, 19, 22, 0.25), 0 2px 6px rgba(19, 19, 22, 0.06);
+  }
+  .mock-titlebar {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-bottom: 1px solid var(--border); background: #fafafa;
+  }
+  .mock-titlebar .lights { display: flex; gap: 6px; }
+  .mock-titlebar .lights span { width: 10px; height: 10px; border-radius: 50%; }
+  .mock-url {
+    flex: 1; display: flex; justify-content: center;
+  }
+  .mock-url span {
+    font-size: 12px; color: #71717a; background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 4px 40px; font-family: var(--code-font);
+  }
+  .mock-saved { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #71717a; }
+  .mock-saved i { width: 7px; height: 7px; border-radius: 50%; background: #34d399; animation: pulse-dot 2s infinite; }
+  .mock-body { display: grid; grid-template-columns: 180px 1fr 200px; min-height: 440px; }
+  .mock-rail { border-right: 1px solid var(--border); padding: 16px 14px; background: #fcfcfd; }
+  .mock-rail-r { border-right: 0; border-left: 1px solid var(--border); }
+  .rail-label {
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #a1a1aa; margin-bottom: 12px;
+  }
+  .block-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .block-tile {
+    border: 1px solid var(--border); border-radius: 9px; padding: 10px 6px;
+    text-align: center; font-size: 10.5px; color: #52525b; background: #fff;
+  }
+  .block-tile.sel {
+    border-color: rgba(99, 102, 241, 0.5); color: var(--accent-hover);
+    background: rgba(99, 102, 241, 0.05); box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+  }
+  .mock-canvas {
+    background: linear-gradient(180deg, #f5f5f7, #f0f0f3);
+    display: flex; justify-content: center; padding: 26px 20px;
+  }
+  .email-card {
+    width: 340px; max-width: 100%; background: #fff; border-radius: 12px; height: fit-content;
+    box-shadow: 0 10px 30px rgba(19, 19, 22, 0.1); overflow: hidden;
+  }
+  .email-hero {
+    height: 110px; position: relative; display: grid; place-items: center;
+    background: linear-gradient(120deg, #1e1b4b, #4338ca 55%, #7c3aed);
+    color: #fff; font-weight: 700; font-size: 17px; letter-spacing: -0.01em;
+  }
+  .email-hero .tag {
+    position: absolute; top: 8px; right: 10px; font-size: 9px; color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.3); border-radius: 999px; padding: 2px 8px;
+  }
+  .bar { height: 7px; border-radius: 4px; background: #ececf0; margin-bottom: 6px; }
+  .email-btn-row { padding: 14px 20px 6px; position: relative; }
+  .sel-outline {
+    position: absolute; inset: 8px 14px 0; border: 1.5px solid var(--accent);
+    border-radius: 8px; pointer-events: none;
+  }
+  .sel-label {
+    position: absolute; top: 0; left: 20px; background: var(--accent); color: #fff;
+    font-size: 9px; font-weight: 600; border-radius: 4px; padding: 2px 7px;
+  }
+  .email-btn {
+    width: 132px; margin: 8px auto 6px; padding: 9px 0; text-align: center; border-radius: 8px;
+    background: var(--grad); color: #fff; font-size: 12px; font-weight: 600;
+  }
+  .mock-code { font-family: var(--code-font); font-size: 10px; line-height: 1.9; padding: 14px; overflow: hidden; white-space: nowrap; }
+  .mock-code .t { color: #059669; }
+  .mock-code .a { color: #b45309; }
+  .mock-code .v { color: #1d4ed8; }
+  .mock-code .c { color: #a1a1aa; }
+  .synced {
+    margin-top: 10px; display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 600; color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.08);
+    border-radius: 999px; padding: 3px 10px; font-family: var(--ui-font);
+  }
+  .synced i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+
+  /* ---------- Pills strip ---------- */
+  .pills-strip {
+    max-width: 1120px; margin: 64px auto 0; padding: 0 24px; text-align: center;
+  }
+  .pills-strip .cap { font-size: 13px; color: var(--fg-faint); margin-bottom: 18px; }
+  .pills-strip .row { display: flex; gap: 10px 12px; flex-wrap: wrap; justify-content: center; }
+  .pill {
+    border: 1px solid var(--border); border-radius: 999px; padding: 7px 16px;
+    background: var(--panel); font-size: 13px; font-weight: 500; color: var(--fg-dim);
+    box-shadow: var(--shadow-sm); white-space: nowrap;
   }
 
-  .section { max-width: 1080px; margin: 0 auto; padding: 72px 24px 0; }
-  .section > h2 {
-    font-size: clamp(24px, 3vw, 32px); font-weight: 750; letter-spacing: -0.02em;
-    margin: 0 0 10px; text-wrap: balance;
-  }
-  .section > .section-sub { color: var(--fg-dim); margin: 0 0 34px; max-width: 60ch; }
-
-  .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  /* ---------- Features ---------- */
+  .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
   .feat {
-    background: color-mix(in srgb, var(--panel) 82%, transparent);
-    border: 1px solid var(--border); border-radius: 18px; padding: 24px;
-    transition: border-color 0.18s ease, transform 0.18s ease;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 26px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
-  .feat:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); transform: translateY(-2px); }
+  .feat:hover { transform: translateY(-4px); box-shadow: 0 16px 36px rgba(19, 19, 22, 0.1); }
   .feat .ico {
-    width: 40px; height: 40px; border-radius: 12px; margin-bottom: 15px;
+    width: 38px; height: 38px; border-radius: 11px; margin-bottom: 16px;
     display: flex; align-items: center; justify-content: center;
-    background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent);
   }
-  .feat .ico svg { width: 20px; height: 20px; }
-  .feat h3 { margin: 0 0 6px; font-size: 15.5px; font-weight: 650; }
-  .feat p { margin: 0; font-size: 13.5px; color: var(--fg-dim); line-height: 1.6; }
+  .feat .ico svg { width: 18px; height: 18px; }
+  .feat h3 { margin: 0 0 7px; font-size: 16.5px; font-weight: 600; }
+  .feat p { margin: 0; font-size: 14px; color: var(--fg-dim); line-height: 1.6; text-wrap: pretty; }
 
-  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; counter-reset: step; }
+  /* ---------- Showcase row ---------- */
+  .showcase {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 44px; align-items: center; margin-top: 88px;
+  }
+  .showcase h3 {
+    font-size: clamp(26px, 3vw, 34px); letter-spacing: -0.025em; font-weight: 700;
+    line-height: 1.15; margin: 12px 0 14px;
+  }
+  .showcase .body { font-size: 15.5px; line-height: 1.65; color: var(--fg-dim); margin: 0 0 20px; text-wrap: pretty; }
+  .check-list { display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--fg); }
+  .check-list div { display: flex; gap: 10px; align-items: center; }
+  .check-list .ck {
+    width: 18px; height: 18px; border-radius: 50%; flex: none;
+    background: rgba(139, 92, 246, 0.12); color: var(--accent-2);
+    display: grid; place-items: center; font-size: 10px; font-weight: 700;
+  }
+  .showcase-art { position: relative; }
+  .showcase-art .halo {
+    /* Vertical bleed only — horizontal bleed caused page-level x-overflow
+       on narrow screens (the section has no clipping ancestor). */
+    position: absolute; inset: -30px 0;
+    background: radial-gradient(closest-side, rgba(139, 92, 246, 0.14), transparent 70%);
+  }
+
+  /* ---------- Steps ---------- */
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
   .step {
-    border-left: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
-    padding: 4px 0 4px 20px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 28px;
+    box-shadow: var(--shadow-sm);
   }
-  .step h3 { margin: 0 0 6px; font-size: 15px; font-weight: 650; }
-  .step h3::before {
-    counter-increment: step; content: "0" counter(step);
-    display: block; font-family: var(--code-font); font-size: 12px;
-    color: var(--accent); margin-bottom: 8px; letter-spacing: 0.08em;
+  .step .num {
+    font-family: var(--code-font); font-size: 13px; font-weight: 500;
+    border-radius: 8px; width: fit-content; padding: 4px 10px; margin-bottom: 18px;
   }
-  .step p { margin: 0; font-size: 13.5px; color: var(--fg-dim); line-height: 1.6; }
+  .step h3 { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
+  .step p { margin: 0; font-size: 14px; color: var(--fg-dim); line-height: 1.6; text-wrap: pretty; }
 
-  .cta-band {
-    max-width: 1080px; margin: 84px auto 0; padding: 0 24px;
+  /* ---------- Facts band ---------- */
+  .facts {
+    margin-top: 72px; display: flex; flex-wrap: wrap; gap: 1px;
+    background: var(--border); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
   }
+  .fact { flex: 1 1 220px; background: var(--panel); padding: 30px 26px; }
+  .fact .big {
+    font-size: 32px; font-weight: 700; letter-spacing: -0.03em;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .fact .cap { font-size: 13.5px; color: var(--fg-dim); margin-top: 6px; line-height: 1.5; }
+
+  /* ---------- FAQ ---------- */
+  .faq-wrap { max-width: 760px; margin: 0 auto; }
+  .faq-wrap details {
+    border: 1px solid var(--border); border-radius: 14px; background: var(--panel);
+    padding: 0 22px; margin-bottom: 12px;
+  }
+  .faq-wrap summary {
+    cursor: pointer; font-size: 15.5px; font-weight: 600; padding: 19px 0;
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    list-style: none;
+  }
+  .faq-wrap summary::-webkit-details-marker { display: none; }
+  .faq-wrap summary .plus { color: var(--fg-faint); font-size: 19px; font-weight: 400; flex: none; transition: transform 0.25s ease; }
+  .faq-wrap details[open] summary .plus { transform: rotate(45deg); }
+  .faq-wrap details p {
+    font-size: 14.5px; line-height: 1.65; color: var(--fg-dim);
+    margin: 0; padding: 0 0 20px; text-wrap: pretty;
+  }
+
+  /* ---------- CTA band ---------- */
+  .cta-band { max-width: 1120px; margin: 88px auto 0; padding: 0 24px; }
   .cta-inner {
-    border-radius: 26px; padding: 52px 36px; text-align: center;
-    background:
-      radial-gradient(600px 260px at 50% -40%, rgba(110, 123, 255, 0.35), transparent 70%),
-      color-mix(in srgb, var(--panel) 88%, transparent);
-    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+    position: relative; border-radius: 24px; overflow: hidden; text-align: center;
+    background: #131316; padding: clamp(48px, 7vw, 84px) 32px;
   }
-  .cta-inner h2 { font-size: clamp(24px, 3vw, 32px); font-weight: 800; letter-spacing: -0.02em; margin: 0 0 10px; }
-  .cta-inner p { color: var(--fg-dim); margin: 0 0 26px; }
+  .cta-inner .fx { position: absolute; inset: 0; pointer-events: none; }
+  .cta-inner .fx .g1 {
+    position: absolute; top: -120px; left: 20%; width: 500px; height: 400px;
+    background: radial-gradient(closest-side, rgba(99, 102, 241, 0.4), transparent 70%);
+  }
+  .cta-inner .fx .g2 {
+    position: absolute; bottom: -140px; right: 15%; width: 520px; height: 420px;
+    background: radial-gradient(closest-side, rgba(139, 92, 246, 0.35), transparent 70%);
+  }
+  .cta-inner .fx .grid-lines {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 60% 70% at 50% 50%, #000, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 50%, #000, transparent 80%);
+  }
+  .cta-inner h2 {
+    position: relative; color: #fff; font-size: clamp(30px, 4.4vw, 50px);
+    letter-spacing: -0.03em; font-weight: 700; margin: 0 0 16px; line-height: 1.1;
+  }
+  .cta-inner h2 .serif {
+    background: linear-gradient(100deg, #a5b4fc, #c4b5fd, #f0abfc);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .cta-inner p { position: relative; color: #a1a1aa; font-size: 16px; max-width: 440px; margin: 0 auto 30px; line-height: 1.6; }
+  .cta-inner .row { position: relative; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .cta-inner .btn-white { background: #fff; color: #131316; }
+  .cta-inner .btn-white:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(255, 255, 255, 0.15); }
+  .cta-inner .btn-line { border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; background: transparent; box-shadow: none; }
+  .cta-inner .btn-line:hover { border-color: rgba(255, 255, 255, 0.6); }
 
-  @media (max-width: 880px) {
-    .hero { grid-template-columns: 1fr; padding-top: 40px; gap: 36px; }
-    .hero .lede { max-width: none; }
-    .hero-art { order: -1; max-width: 520px; margin: 0 auto; }
+  @media (max-width: 720px) {
+    .site-nav .nav-link.hide-sm { display: none; }
+    .chip-l { left: 4px; top: 24px; }
+    .chip-r { right: 4px; }
+    .mock-body { grid-template-columns: 1fr; }
+    .mock-rail { display: none; }
   }
 </style>
 </head>
 <body>
 
-<nav class="site-nav">
-  <a class="brand" href="index.html"><span class="dot"></span>Aurora</a>
-  <span class="grow"></span>
-  <a class="nav-link" href="#features">Features</a>
-  <a class="nav-link" href="login.html" id="nav-login">Log in</a>
-  <a class="btn btn-primary" href="signup.html" id="nav-signup" style="padding:9px 18px;font-size:13.5px;">Sign up free</a>
+<nav class="site-nav sticky">
+  <div class="nav-inner">
+    <a class="brand" href="index.html"><span class="dot"></span>HTMLStudio</a>
+    <span class="grow"></span>
+    <a class="nav-link hide-sm" href="#features">Features</a>
+    <a class="nav-link hide-sm" href="#how">How it works</a>
+    <a class="nav-link hide-sm" href="#faq">FAQ</a>
+    <a class="nav-link" href="login.html" id="nav-login">Log in</a>
+    <a class="btn btn-dark" href="signup.html" id="nav-signup" style="padding:9px 18px;font-size:13.5px;">Sign up free</a>
+  </div>
 </nav>
 
 <header class="hero">
-  <div>
-    <h1>Design and ship beautiful emails, <span class="glow">right in your browser</span></h1>
+  <div class="hero-bg" aria-hidden="true">
+    <div class="glow-a"></div><div class="glow-b"></div><div class="glow-c"></div>
+    <div class="grid-lines"></div>
+  </div>
+  <div class="hero-inner">
+    <span class="hero-badge">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/></svg>
+      Free &amp; open source · runs entirely in your browser
+    </span>
+    <h1>Beautiful HTML emails,<br><span class="serif grad-text">without the fight.</span></h1>
     <p class="lede">
-      Aurora is a zero-install email studio. Non-coders drag blocks into
-      polished, responsive campaigns; developers get a full code editor with
-      IntelliSense and live preview. One tool, one link, nothing to install.
+      HTMLStudio is a zero-install email studio. Drag blocks into polished, responsive
+      campaigns — or open the full code editor with IntelliSense and live preview.
+      One tool, one link, nothing to install.
     </p>
     <div class="hero-ctas">
-      <a class="btn btn-primary" href="signup.html" id="hero-signup">Start building — it’s free</a>
+      <a class="btn btn-primary" href="signup.html" id="hero-signup">
+        Start building — it's free
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
       <a class="btn btn-ghost" href="login.html" id="hero-login">Log in</a>
-      <span class="fine">Runs entirely in your browser · no installs, no credit card</span>
     </div>
+    <div class="fine">No installs, no credit card · your work stays in your browser</div>
   </div>
 
-  <div class="hero-art" aria-hidden="true">
-    <!-- Hand-crafted illustration of the product: builder canvas + live preview -->
-    <svg viewBox="0 0 560 420" role="img" aria-label="Aurora editor illustration">
-      <defs>
-        <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#6e7bff"/><stop offset="1" stop-color="#35d0a0"/>
-        </linearGradient>
-        <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#232838"/><stop offset="1" stop-color="#161a26"/>
-        </linearGradient>
-      </defs>
-      <!-- window -->
-      <rect x="20" y="18" width="520" height="384" rx="18" fill="url(#gB)" stroke="rgba(255,255,255,0.1)"/>
-      <circle cx="46" cy="44" r="5" fill="#ef6b6b"/><circle cx="64" cy="44" r="5" fill="#f2b84b"/><circle cx="82" cy="44" r="5" fill="#35d0a0"/>
-      <rect x="104" y="36" width="120" height="16" rx="8" fill="rgba(255,255,255,0.07)"/>
-      <rect x="452" y="34" width="70" height="20" rx="10" fill="rgba(110,123,255,0.25)"/>
-      <!-- palette column -->
-      <g>
-        <rect x="38" y="72" width="118" height="312" rx="12" fill="rgba(255,255,255,0.03)"/>
-        <rect x="50" y="88" width="94" height="40" rx="9" fill="rgba(255,255,255,0.06)" stroke="rgba(110,123,255,0.4)"/>
-        <rect x="58" y="98" width="20" height="20" rx="5" fill="url(#gA)" opacity="0.9"/>
-        <rect x="86" y="102" width="48" height="5" rx="2.5" fill="rgba(255,255,255,0.3)"/>
-        <rect x="86" y="112" width="34" height="5" rx="2.5" fill="rgba(255,255,255,0.15)"/>
-        <g opacity="0.75">
-          <rect x="50" y="138" width="94" height="40" rx="9" fill="rgba(255,255,255,0.05)"/>
-          <rect x="58" y="148" width="20" height="20" rx="5" fill="#7ee787" opacity="0.6"/>
-          <rect x="86" y="152" width="44" height="5" rx="2.5" fill="rgba(255,255,255,0.25)"/>
-          <rect x="86" y="162" width="30" height="5" rx="2.5" fill="rgba(255,255,255,0.12)"/>
-        </g>
-        <g opacity="0.6">
-          <rect x="50" y="188" width="94" height="40" rx="9" fill="rgba(255,255,255,0.05)"/>
-          <rect x="58" y="198" width="20" height="20" rx="5" fill="#ffa657" opacity="0.6"/>
-          <rect x="86" y="202" width="48" height="5" rx="2.5" fill="rgba(255,255,255,0.25)"/>
-          <rect x="86" y="212" width="26" height="5" rx="2.5" fill="rgba(255,255,255,0.12)"/>
-        </g>
-        <g opacity="0.5">
-          <rect x="50" y="238" width="94" height="40" rx="9" fill="rgba(255,255,255,0.05)"/>
-          <rect x="58" y="248" width="20" height="20" rx="5" fill="#a5d6ff" opacity="0.6"/>
-          <rect x="86" y="252" width="40" height="5" rx="2.5" fill="rgba(255,255,255,0.25)"/>
-          <rect x="86" y="262" width="32" height="5" rx="2.5" fill="rgba(255,255,255,0.12)"/>
-        </g>
-      </g>
-      <!-- canvas / email preview -->
-      <g>
-        <rect x="172" y="72" width="240" height="312" rx="12" fill="#f4f5f9"/>
-        <rect x="190" y="90" width="204" height="86" rx="9" fill="url(#gA)"/>
-        <rect x="216" y="112" width="152" height="10" rx="5" fill="rgba(255,255,255,0.9)"/>
-        <rect x="238" y="130" width="108" height="7" rx="3.5" fill="rgba(255,255,255,0.55)"/>
-        <rect x="258" y="148" width="68" height="16" rx="8" fill="#ffffff"/>
-        <rect x="190" y="192" width="204" height="8" rx="4" fill="#c9cede"/>
-        <rect x="190" y="208" width="168" height="8" rx="4" fill="#d9dde9"/>
-        <rect x="190" y="224" width="186" height="8" rx="4" fill="#d9dde9"/>
-        <g>
-          <rect x="190" y="250" width="96" height="76" rx="9" fill="#e6e9f2"/>
-          <rect x="198" y="258" width="80" height="34" rx="6" fill="url(#gA)" opacity="0.7"/>
-          <rect x="198" y="300" width="56" height="7" rx="3.5" fill="#aab1c6"/>
-          <rect x="298" y="250" width="96" height="76" rx="9" fill="#e6e9f2"/>
-          <rect x="306" y="258" width="80" height="34" rx="6" fill="#35d0a0" opacity="0.55"/>
-          <rect x="306" y="300" width="56" height="7" rx="3.5" fill="#aab1c6"/>
-        </g>
-        <rect x="238" y="344" width="108" height="18" rx="9" fill="#6e7bff"/>
-        <!-- selection outline on hero block -->
-        <rect x="186" y="86" width="212" height="94" rx="11" fill="none" stroke="#6e7bff" stroke-width="2" stroke-dasharray="6 5"/>
-        <circle cx="398" cy="86" r="4" fill="#6e7bff"/>
-      </g>
-      <!-- code column -->
-      <g font-family="ui-monospace, Menlo, monospace" font-size="10">
-        <rect x="428" y="72" width="94" height="312" rx="12" fill="rgba(255,255,255,0.03)"/>
-        <text x="440" y="98" fill="#7ee787">&lt;table&gt;</text>
-        <text x="448" y="116" fill="#a5d6ff">&lt;tr&gt;</text>
-        <text x="454" y="134" fill="#ffa657">&lt;td&gt;</text>
-        <text x="454" y="152" fill="rgba(255,255,255,0.55)">Hello</text>
-        <text x="454" y="170" fill="#ffa657">&lt;/td&gt;</text>
-        <text x="448" y="188" fill="#a5d6ff">&lt;/tr&gt;</text>
-        <text x="440" y="206" fill="#7ee787">&lt;/table&gt;</text>
-        <rect x="440" y="222" width="70" height="7" rx="3.5" fill="rgba(255,255,255,0.1)"/>
-        <rect x="440" y="238" width="52" height="7" rx="3.5" fill="rgba(255,255,255,0.07)"/>
-        <rect x="440" y="254" width="62" height="7" rx="3.5" fill="rgba(255,255,255,0.07)"/>
-        <rect x="440" y="336" width="70" height="26" rx="13" fill="rgba(53,208,160,0.2)" stroke="rgba(53,208,160,0.5)"/>
-        <circle cx="454" cy="349" r="3.5" fill="#35d0a0"/>
-        <text x="463" y="353" fill="#35d0a0" font-family="-apple-system, sans-serif" font-size="9">Synced</text>
-      </g>
-    </svg>
+  <!-- Product mockup: a faithful, hand-built picture of the editor -->
+  <div class="mock-wrap" aria-hidden="true">
+    <div class="mock-underglow"></div>
+
+    <div class="chip chip-l">
+      <span class="chip-ico" style="background:var(--grad);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/></svg>
+      </span>
+      <span><b>Builder mode</b><small>11 email-safe blocks</small></span>
+    </div>
+    <div class="chip chip-r">
+      <span class="chip-ico" style="background:#131316;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </span>
+      <span><b>Export</b><small>Responsive 600px table HTML</small></span>
+    </div>
+
+    <div class="mock-window">
+      <div class="mock-titlebar">
+        <div class="lights"><span style="background:#fb7185"></span><span style="background:#fbbf24"></span><span style="background:#34d399"></span></div>
+        <div class="mock-url"><span>htmlstudio · editor</span></div>
+        <div class="mock-saved"><i></i>Saved</div>
+      </div>
+      <div class="mock-body">
+        <div class="mock-rail">
+          <div class="rail-label">Blocks</div>
+          <div class="block-grid">
+            <div class="block-tile"><div style="height:14px;display:grid;place-items:center;margin-bottom:5px;color:var(--accent);font-weight:700;font-size:12px;">T</div>Text</div>
+            <div class="block-tile sel">
+              <svg style="margin-bottom:4px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><br>Image
+            </div>
+            <div class="block-tile"><div style="height:14px;margin:0 auto 5px;width:26px;border-radius:4px;background:var(--grad);"></div>Button</div>
+            <div class="block-tile"><div style="height:14px;display:flex;align-items:center;gap:2px;justify-content:center;margin-bottom:5px;"><span style="width:10px;height:12px;background:#e4e4e7;border-radius:2px;"></span><span style="width:10px;height:12px;background:#e4e4e7;border-radius:2px;"></span></div>Columns</div>
+          </div>
+          <div class="rail-label" style="margin-top:16px;">Saved blocks</div>
+          <div style="border:1px dashed rgba(19,19,22,0.15);border-radius:9px;padding:10px;font-size:10.5px;color:#a1a1aa;text-align:center;">Header · Footer · Promo</div>
+        </div>
+        <div class="mock-canvas">
+          <div class="email-card">
+            <div class="email-hero">Solstice <span class="serif" style="margin-left:6px;">Summer Drop</span><span class="tag">Hero</span></div>
+            <div style="padding:18px 20px 8px;">
+              <div style="font-size:15px;font-weight:700;color:#18181b;margin-bottom:8px;">20% off, this weekend only</div>
+              <div class="bar"></div>
+              <div class="bar" style="width:88%;"></div>
+              <div class="bar" style="width:64%;margin-bottom:0;"></div>
+            </div>
+            <div class="email-btn-row">
+              <div class="sel-outline"></div><div class="sel-label">Button</div>
+              <div class="email-btn">Shop the drop</div>
+            </div>
+            <div style="padding:12px 20px 18px;display:flex;gap:8px;">
+              <div style="flex:1;height:64px;border-radius:8px;background:linear-gradient(135deg,#fde68a,#fca5a5);"></div>
+              <div style="flex:1;height:64px;border-radius:8px;background:linear-gradient(135deg,#a5b4fc,#67e8f9);"></div>
+            </div>
+          </div>
+        </div>
+        <div class="mock-rail mock-rail-r">
+          <div class="rail-label">Code</div>
+          <div class="mock-code">
+            <span class="t">&lt;table</span> <span class="a">width</span>=<span class="v">"600"</span><span class="t">&gt;</span><br>
+            &nbsp;&nbsp;<span class="t">&lt;tr&gt;&lt;td</span> <span class="a">class</span>=<span class="v">"hero"</span><span class="t">&gt;</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="c">…</span><br>
+            &nbsp;&nbsp;<span class="t">&lt;/td&gt;&lt;/tr&gt;</span><br>
+            &nbsp;&nbsp;<span class="t">&lt;tr&gt;&lt;td</span> <span class="a">align</span>=<span class="v">"center"</span><span class="t">&gt;</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="t">&lt;a</span> <span class="a">class</span>=<span class="v">"btn"</span><span class="t">&gt;</span>Shop<span class="t">&lt;/a&gt;</span><br>
+            &nbsp;&nbsp;<span class="t">&lt;/td&gt;&lt;/tr&gt;</span><br>
+            <span class="t">&lt;/table&gt;</span>
+            <div class="synced"><i></i>Synced</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
 
-<div class="logos-strip" aria-label="Highlights">
-  <span class="pill">Zero install</span>
-  <span class="pill">Responsive by default</span>
-  <span class="pill">RTL &amp; LTR</span>
-  <span class="pill">Works offline after first load</span>
-  <span class="pill">Free &amp; open source</span>
+<div class="pills-strip" data-reveal>
+  <div class="cap">Everything runs client-side — honest by design</div>
+  <div class="row" aria-label="Highlights">
+    <span class="pill">Zero install</span>
+    <span class="pill">Responsive by default</span>
+    <span class="pill">RTL &amp; LTR</span>
+    <span class="pill">Works offline after first load</span>
+    <span class="pill">Free &amp; open source</span>
+  </div>
 </div>
 
 <section class="section" id="features">
-  <h2>Two editors. One studio.</h2>
-  <p class="section-sub">
-    Marketers build visually; developers fine-tune the generated HTML.
-    Both work on the same designs, in the same place.
-  </p>
+  <div data-reveal>
+    <p class="kicker">Features</p>
+    <h2>Two editors. <span class="serif">One studio.</span></h2>
+    <p class="section-sub">
+      Marketers build visually; developers fine-tune the generated HTML.
+      Both work on the same designs, in the same place.
+    </p>
+  </div>
   <div class="feat-grid">
-    <div class="feat">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 13h4" stroke-linecap="round"/></svg></span>
+    <div class="feat" data-reveal>
+      <span class="ico" style="background:rgba(99,102,241,0.1);color:var(--accent);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><circle cx="12" cy="12" r="2.5"/></svg>
+      </span>
       <h3>Drag-and-drop builder</h3>
       <p>Eleven content blocks — hero, products, buttons, columns, social, footer — arranged by dragging. Every block is email-safe table HTML underneath.</p>
     </div>
-    <div class="feat">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="2.6"/></svg></span>
+    <div class="feat" data-reveal>
+      <span class="ico" style="background:rgba(139,92,246,0.1);color:var(--accent-2);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="2.6"/></svg>
+      </span>
       <h3>Live preview &amp; device modes</h3>
       <p>See changes as you type, then check desktop, tablet, and mobile frames before anything goes out.</p>
     </div>
-    <div class="feat">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4l-5 8 5 8M16 4l5 8-5 8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <div class="feat" data-reveal>
+      <span class="ico" style="background:rgba(14,165,233,0.1);color:#0ea5e9;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l-5 8 5 8M16 4l5 8-5 8"/></svg>
+      </span>
       <h3>Real code editor</h3>
       <p>Syntax highlighting for HTML, CSS, and JavaScript, tag and attribute IntelliSense, snippets, find &amp; replace with regex, multi-cursor.</p>
     </div>
-    <div class="feat">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg></span>
+    <div class="feat" data-reveal>
+      <span class="ico" style="background:rgba(16,185,129,0.1);color:var(--live);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>
+      </span>
       <h3>Template library</h3>
       <p>Start from professional layouts, save your own, and reuse custom blocks across campaigns — everything stays editable.</p>
     </div>
-    <div class="feat">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 14a5 5 0 007.1 0l2.4-2.4a5 5 0 00-7.1-7.1L11 5.9M14 10a5 5 0 00-7.1 0l-2.4 2.4a5 5 0 007.1 7.1L13 18.1" stroke-linecap="round"/></svg></span>
+    <div class="feat" data-reveal>
+      <span class="ico" style="background:rgba(245,158,11,0.1);color:var(--warn);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 14a5 5 0 007.1 0l2.4-2.4a5 5 0 00-7.1-7.1L11 5.9M14 10a5 5 0 00-7.1 0l-2.4 2.4a5 5 0 007.1 7.1L13 18.1"/></svg>
+      </span>
       <h3>UTM builder</h3>
       <p>Consistent campaign links with validation, quick presets you manage yourself, pinned favorites, and one-click copy.</p>
     </div>
-    <div class="feat">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 18a4 4 0 01-.5-7.97A5.5 5.5 0 0117.9 9.5 3.5 3.5 0 0117.5 16" stroke-linecap="round"/><path d="M12 12v6M9.5 14l2.5-2.5L14.5 14" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <div class="feat" data-reveal>
+      <span class="ico" style="background:rgba(244,63,94,0.09);color:var(--danger);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 01-.5-7.97A5.5 5.5 0 0117.9 9.5 3.5 3.5 0 0117.5 16"/><path d="M12 12v6M9.5 14l2.5-2.5L14.5 14"/></svg>
+      </span>
       <h3>CDN image hosting</h3>
       <p>Connect your own ImageKit account to upload images and insert email-optimized, Outlook-safe tags in one click.</p>
     </div>
   </div>
+
+  <!-- Showcase: builder ↔ code sync -->
+  <div class="showcase" data-reveal>
+    <div>
+      <p class="kicker" style="color:var(--accent-2);">Builder ↔ Code</p>
+      <h3>Drag it. <span class="serif">Or type it.</span></h3>
+      <p class="body">
+        Every block you drag becomes clean, email-safe table HTML — and every line you
+        write shows up in the visual canvas. Designers and developers stop handing
+        files back and forth.
+      </p>
+      <div class="check-list">
+        <div><span class="ck">✓</span>Per-block inspector for spacing, colors, and links</div>
+        <div><span class="ck">✓</span>Exports responsive 600px table HTML</div>
+        <div><span class="ck">✓</span>RTL and LTR layouts, one toggle</div>
+      </div>
+    </div>
+    <div class="showcase-art">
+      <div class="halo"></div>
+      <div style="position:relative;border:1px solid var(--border);border-radius:16px;background:var(--panel);box-shadow:var(--shadow);padding:18px;max-width:440px;margin:0 auto;">
+        <div style="display:flex;gap:6px;margin-bottom:14px;">
+          <span style="font-size:12px;font-weight:600;padding:5px 14px;border-radius:999px;background:var(--fg);color:var(--bg);">Builder</span>
+          <span style="font-size:12px;font-weight:600;padding:5px 14px;border-radius:999px;border:1px solid var(--border);color:var(--fg-dim);">Code</span>
+          <span style="font-size:12px;font-weight:600;padding:5px 14px;border-radius:999px;border:1px solid var(--border);color:var(--fg-dim);">Preview</span>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+          <div style="height:64px;background:linear-gradient(120deg,#1e1b4b,#7c3aed);display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700;">Hero block</div>
+          <div style="padding:12px 14px;">
+            <div class="bar" style="background:var(--field);"></div>
+            <div class="bar" style="background:var(--field);width:78%;"></div>
+            <div style="width:112px;margin:10px auto 4px;padding:8px 0;text-align:center;border-radius:8px;background:var(--grad);color:#fff;font-size:11.5px;font-weight:600;">Button block</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-family:var(--code-font);font-size:11px;color:var(--fg-dim);background:var(--field);border-radius:10px;padding:10px 14px;overflow:hidden;white-space:nowrap;">
+          &lt;td align="center" bgcolor="#6366f1"&gt;…&lt;/td&gt;
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<section class="section">
-  <h2>From idea to inbox in three steps</h2>
-  <p class="section-sub">No environment setup, no build tools, no downloads.</p>
+<section class="section" id="how" style="padding-top:88px;">
+  <div data-reveal style="text-align:center;max-width:560px;margin:0 auto 44px;">
+    <p class="kicker">How it works</p>
+    <h2>From idea to inbox in <span class="serif">three steps</span></h2>
+    <p class="section-sub" style="margin-bottom:0;">No environment setup, no build tools, no downloads.</p>
+  </div>
   <div class="steps">
-    <div class="step">
+    <div class="step" data-reveal>
+      <div class="num" style="color:var(--accent);background:rgba(99,102,241,0.08);">01</div>
       <h3>Create your account</h3>
-      <p>Sign up in seconds — your workspace, templates, and presets are ready immediately.</p>
+      <p>Sign up in seconds — your workspace, templates, and presets are ready immediately, stored privately in your browser.</p>
     </div>
-    <div class="step">
+    <div class="step" data-reveal>
+      <div class="num" style="color:var(--accent-2);background:rgba(139,92,246,0.08);">02</div>
       <h3>Build visually or in code</h3>
       <p>Drag blocks onto the canvas or write HTML directly. The live preview keeps up either way.</p>
     </div>
-    <div class="step">
+    <div class="step" data-reveal>
+      <div class="num" style="color:#0ea5e9;background:rgba(14,165,233,0.08);">03</div>
       <h3>Export &amp; send</h3>
       <p>Copy production-ready, responsive email HTML — or export the full document — and drop it into any sending platform.</p>
     </div>
   </div>
+
+  <div class="facts" data-reveal>
+    <div class="fact"><div class="big">0</div><div class="cap">installs, downloads, or build steps — it's one link</div></div>
+    <div class="fact"><div class="big">11</div><div class="cap">email-safe content blocks, all table-HTML underneath</div></div>
+    <div class="fact"><div class="big">3</div><div class="cap">device preview frames — desktop, tablet, and mobile</div></div>
+    <div class="fact"><div class="big">100%</div><div class="cap">yours — open source, and your data never leaves the browser</div></div>
+  </div>
 </section>
 
-<div class="cta-band">
+<section class="section" id="faq" style="padding-top:88px;">
+  <div data-reveal style="text-align:center;margin-bottom:40px;">
+    <p class="kicker">FAQ</p>
+    <h2>Questions, <span class="serif">answered</span></h2>
+  </div>
+  <div class="faq-wrap" data-reveal>
+    <details>
+      <summary>Is it really free?<span class="plus">+</span></summary>
+      <p>Yes — HTMLStudio is free and open source. There's no paid tier, no locked features, and no credit card. You can read every line of the source on GitHub.</p>
+    </details>
+    <details>
+      <summary>Where is my data stored?<span class="plus">+</span></summary>
+      <p>In your own browser. Accounts, templates, saved blocks, and UTM presets live in local storage on your device — nothing is sent to a server. That means your work is private by default, but it also doesn't sync between devices.</p>
+    </details>
+    <details>
+      <summary>Will the exported HTML work in Outlook?<span class="plus">+</span></summary>
+      <p>The builder generates classic table-based HTML — the format email clients have rendered reliably for decades — and exports a responsive 600px layout you can paste into any sending platform.</p>
+    </details>
+    <details>
+      <summary>Can I host images for my emails?<span class="plus">+</span></summary>
+      <p>Yes — connect your own ImageKit account and the editor uploads images to your CDN and inserts email-optimized, Outlook-safe image tags in one click. See the repo's <code>Server/imagekit-auth</code> folder for the small auth worker it needs.</p>
+    </details>
+    <details>
+      <summary>Can I use it offline?<span class="plus">+</span></summary>
+      <p>After the first load, the editor works offline — everything it needs runs client-side in the tab.</p>
+    </details>
+  </div>
+</section>
+
+<div class="cta-band" data-reveal>
   <div class="cta-inner">
-    <h2>Your next campaign starts here</h2>
-    <p>Free forever for individual use. Everything runs in your browser.</p>
-    <a class="btn btn-primary" href="signup.html" id="cta-signup">Create your free account</a>
+    <div class="fx"><div class="g1"></div><div class="g2"></div><div class="grid-lines"></div></div>
+    <h2>Your next campaign,<br><span class="serif">shipped by Friday.</span></h2>
+    <p>Free forever. Everything runs in your browser.</p>
+    <div class="row">
+      <a class="btn btn-white" href="signup.html" id="cta-signup">Create your free account</a>
+      <a class="btn btn-line" href="https://github.com/Badyyan/HTML-editor" rel="noopener">View on GitHub</a>
+    </div>
   </div>
 </div>
 
 <footer class="site-footer">
-  <span>Aurora — the zero-install email studio.</span>
+  <span>HTMLStudio — the zero-install email studio.</span>
   <a href="https://github.com/Badyyan/HTML-editor" rel="noopener">Source on GitHub</a>
   <a href="login.html">Log in</a>
 </footer>
@@ -314,6 +628,22 @@
   navLogin.href = 'dashboard.html';
   document.getElementById('hero-login').href = 'dashboard.html';
   document.getElementById('hero-login').textContent = 'Open dashboard';
+})();
+
+// Scroll reveal: hide below-the-fold sections, fade them up on intersect.
+(function () {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const els = [...document.querySelectorAll('[data-reveal]')]
+    .filter(el => el.getBoundingClientRect().top > innerHeight * 0.92);
+  els.forEach(el => el.classList.add('reveal-init'));
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      e.target.classList.add('reveal-in');
+      io.unobserve(e.target);
+    }
+  }, { threshold: 0.12 });
+  els.forEach(el => io.observe(el));
 })();
 </script>
 </body>
