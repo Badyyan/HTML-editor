@@ -693,6 +693,12 @@
     background: var(--bg);
   }
   .builder.active { display: grid; }
+  @media (max-width: 1180px) {
+    .builder { grid-template-columns: 212px 1fr 232px; }
+  }
+  @media (max-width: 980px) {
+    .builder { grid-template-columns: 190px 1fr 208px; }
+  }
 
   .palette {
     background: var(--sidebar); border-right: 1px solid var(--border);
@@ -722,24 +728,44 @@
   @font-face { font-family: 'Ping AR + LT'; src: url('fonts/PingARLT-Heavy.woff2') format('woff2'); font-weight: 800; font-style: normal; }
 
   .canvas-wrap {
-    overflow-y: auto; min-height: 0;
-    display: flex; flex-direction: column; align-items: center;
+    /* Scrolls in BOTH axes: the email frame keeps its true design width, so
+       when the middle column is narrower than the frame the whole canvas
+       scrolls rather than the frame shrinking and blocks spilling out.
+       `safe center` keeps the frame centered but never clips its left edge
+       out of reach when it is wider than the pane. */
+    overflow: auto; min-height: 0;
+    display: flex; flex-direction: column; align-items: safe center;
     padding: 20px 20px 60px;
+    scroll-behavior: smooth; overscroll-behavior: contain;
     background:
       radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0) 0 0 / 16px 16px;
   }
   .canvas-toolbar {
-    display: flex; gap: 8px; align-items: center; margin-bottom: 14px;
+    display: flex; gap: 6px; align-items: center; margin-bottom: 14px;
     background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
     padding: 5px 8px; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 5;
+    flex: none;
   }
   .canvas-toolbar .tbtn { height: 26px; }
-  .bcanvas {
-    width: 620px; max-width: 100%; min-height: 320px;
-    background: #f3f4f6; padding: 10px;
-    border-radius: 10px; box-shadow: var(--shadow);
+  .canvas-toolbar .tbtn[disabled] { opacity: 0.4; pointer-events: none; }
+  .canvas-toolbar-sep {
+    width: 1px; align-self: stretch; margin: 2px 2px;
+    background: var(--border);
   }
-  .bcanvas-inner { width: 100%; max-width: 600px; margin: 0 auto; }
+  .bcanvas {
+    /* Fixed true width (600px content + 2×10px padding). Never shrinks, so
+       no child block can ever overflow the frame — the frame overflows the
+       pane instead, which the wrap scrolls. */
+    width: 620px; flex: none; min-height: 320px;
+    background: #f3f4f6; padding: 10px;
+    border-radius: 12px; box-shadow: var(--shadow);
+  }
+  .bcanvas-inner { width: 600px; max-width: 600px; margin: 0 auto; }
+  /* Safety net: nothing a block renders (oversized images, long unbroken
+     strings) may push past the 600px email frame. */
+  .bcanvas-inner img { max-width: 100%; height: auto; }
+  .cblock, .cblock * { max-width: 100%; }
+  .cblock td, .cblock p, .cblock div, .cblock a { overflow-wrap: anywhere; }
   .canvas-empty {
     padding: 70px 30px; text-align: center; color: #6b7280; font-size: 13px;
     border: 2px dashed #cbd2dc; border-radius: 8px; background: #fbfcfe;
@@ -747,14 +773,25 @@
   .cblock { position: relative; }
   .cblock::after {
     content: ""; position: absolute; inset: 0; pointer-events: none;
-    border: 1.5px solid transparent; border-radius: 2px;
+    border: 2px solid transparent; border-radius: 4px;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
   }
   .cblock:hover::after { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
-  .cblock.sel::after { border-color: var(--accent); }
-  .cblock.drop-before::before {
-    content: ""; position: absolute; left: 0; right: 0; top: -2px; height: 3px;
-    background: var(--accent); border-radius: 2px; z-index: 3;
+  .cblock.sel::after {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
   }
+  .cblock.dragging { opacity: 0.45; }
+  /* Insertion line — above the block for a "drop before", below for "drop
+     after"; only one class is ever set at a time so the shared pseudo picks
+     the matching edge. */
+  .cblock.drop-before::before, .cblock.drop-after::before {
+    content: ""; position: absolute; left: 0; right: 0; height: 3px;
+    background: var(--accent); border-radius: 2px; z-index: 6;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .cblock.drop-before::before { top: -2px; }
+  .cblock.drop-after::before { bottom: -2px; }
   .cblock-controls {
     position: absolute; top: 6px; right: 6px; z-index: 4;
     display: none; gap: 1px;
@@ -1217,6 +1254,15 @@
     </div>
     <div class="canvas-wrap" id="canvas-wrap">
       <div class="canvas-toolbar">
+        <button class="tbtn" id="btn-recall" title="Recall Back — restore the previous state (⌘Z)" disabled aria-keyshortcuts="Meta+Z Control+Z">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 14L4 9l5-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h11a5 5 0 015 5v1a5 5 0 01-5 5H8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="label">Recall</span>
+        </button>
+        <button class="tbtn" id="btn-recall-redo" title="Redo the recalled change (⇧⌘Z)" disabled aria-keyshortcuts="Meta+Shift+Z Control+Shift+Z">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 14l5-5-5-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 9H9a5 5 0 00-5 5v1a5 5 0 005 5h7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="label">Redo</span>
+        </button>
+        <span class="canvas-toolbar-sep" aria-hidden="true"></span>
         <button class="tbtn" id="btn-save-template" title="Save current design to the Template Library">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h11l3 3v13H5V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>
           <span class="label">Save template</span>
@@ -3594,6 +3640,69 @@
     function persist() {
       saveStore({ builderDesign: design, myBlocks, templates });
     }
+
+    /* ---- Recall Back: multi-level history for the builder design ----
+       `past` holds prior full-design snapshots you can return to; `future`
+       holds states you recalled away from (for Redo). Every structural
+       change records the pre-change state via record(); inspector edits
+       record once per edit session (focus→change) so typing doesn't flood
+       the stack. Restoring never records, so undo/redo stay balanced. */
+    const bHistory = (() => {
+      const CAP = 80;
+      const past = [];
+      const future = [];
+      let fieldBaseline = null; // snapshot captured when a field edit begins
+
+      const snap = () => JSON.stringify(design);
+
+      function updateButtons() {
+        const u = $('#btn-recall'), r = $('#btn-recall-redo');
+        if (u) u.disabled = past.length === 0;
+        if (r) r.disabled = future.length === 0;
+      }
+      // Call BEFORE a structural mutation to make it recallable.
+      function record() {
+        past.push(snap());
+        if (past.length > CAP) past.shift();
+        future.length = 0;
+        updateButtons();
+      }
+      function beginFieldEdit() { fieldBaseline = snap(); }
+      function endFieldEdit() {
+        if (fieldBaseline == null) return;
+        if (fieldBaseline !== snap()) {
+          past.push(fieldBaseline);
+          if (past.length > CAP) past.shift();
+          future.length = 0;
+          updateButtons();
+        }
+        fieldBaseline = null;
+      }
+      function restore(stateStr) {
+        design = JSON.parse(stateStr);
+        selectedId = null;
+        persist();
+        renderCanvas();
+        renderInspector();
+        renderDesignFields();
+        updateButtons();
+      }
+      function undo() {
+        if (!past.length) { toast('Nothing to recall'); return; }
+        future.push(snap());
+        restore(past.pop());
+        toast('Recalled the previous state');
+      }
+      function redo() {
+        if (!future.length) { toast('Nothing to redo'); return; }
+        past.push(snap());
+        restore(future.pop());
+        toast('Redid the change');
+      }
+      function reset() { past.length = 0; future.length = 0; fieldBaseline = null; updateButtons(); }
+      return { record, beginFieldEdit, endFieldEdit, undo, redo, reset, updateButtons,
+        get canUndo() { return past.length > 0; }, get canRedo() { return future.length > 0; } };
+    })();
     function makeBlock(type, props) {
       return { id: uid(), type, props: Object.assign({}, TYPES[type].defaults, props || {}) };
     }
@@ -3670,16 +3779,24 @@ ${rows}
         el.addEventListener('dragstart', (e) => {
           e.dataTransfer.setData('text/reorder', b.id);
           e.dataTransfer.effectAllowed = 'move';
+          el.classList.add('dragging');
         });
+        el.addEventListener('dragend', () => el.classList.remove('dragging'));
         el.addEventListener('dragover', (e) => {
           e.preventDefault();
-          el.classList.add('drop-before');
+          // Drop before or after, based on which half the cursor is over —
+          // so the insertion line always matches where the block will land.
+          const r = el.getBoundingClientRect();
+          const after = (e.clientY - r.top) > r.height / 2;
+          el.classList.toggle('drop-after', after);
+          el.classList.toggle('drop-before', !after);
         });
-        el.addEventListener('dragleave', () => el.classList.remove('drop-before'));
+        el.addEventListener('dragleave', () => el.classList.remove('drop-before', 'drop-after'));
         el.addEventListener('drop', (e) => {
           e.preventDefault(); e.stopPropagation();
-          el.classList.remove('drop-before');
-          handleDropOn(b.id, e.dataTransfer);
+          const after = el.classList.contains('drop-after');
+          el.classList.remove('drop-before', 'drop-after');
+          handleDropOn(b.id, e.dataTransfer, after);
         });
         // Neutralize links/inputs inside the preview.
         el.querySelectorAll('a').forEach(a => a.addEventListener('click', ev => ev.preventDefault()));
@@ -3687,26 +3804,39 @@ ${rows}
       });
     }
 
-    function handleDropOn(beforeId, dt) {
+    function handleDropOn(refId, dt, after) {
       const reorderId = dt.getData('text/reorder');
       const paletteType = dt.getData('text/block-type');
       const myBlockId = dt.getData('text/my-block');
-      const at = design.blocks.findIndex(x => x.id === beforeId);
-      if (reorderId && reorderId !== beforeId) {
+      const refIndex = design.blocks.findIndex(x => x.id === refId);
+      if (refIndex === -1) return;
+      // Gate before recording so a no-op drop (e.g. onto itself) leaves the
+      // recall history untouched.
+      if (reorderId) {
+        if (reorderId === refId) return;
         const from = design.blocks.findIndex(x => x.id === reorderId);
-        if (from === -1 || at === -1) return;
+        if (from === -1) return;
+        bHistory.record();
+        let insertAt = refIndex + (after ? 1 : 0);
         const [moved] = design.blocks.splice(from, 1);
-        const to = design.blocks.findIndex(x => x.id === beforeId);
-        design.blocks.splice(to, 0, moved);
+        if (from < insertAt) insertAt--;         // indices shifted by the removal
+        insertAt = Math.max(0, Math.min(insertAt, design.blocks.length));
+        design.blocks.splice(insertAt, 0, moved);
+        selectedId = moved.id;
       } else if (paletteType) {
-        design.blocks.splice(at, 0, makeBlock(paletteType));
-        selectedId = design.blocks[at].id;
+        bHistory.record();
+        const insertAt = refIndex + (after ? 1 : 0);
+        const nb = makeBlock(paletteType);
+        design.blocks.splice(insertAt, 0, nb);
+        selectedId = nb.id;
       } else if (myBlockId) {
         const mb = myBlocks.find(x => x.id === myBlockId);
-        if (mb) {
-          design.blocks.splice(at, 0, makeBlock(mb.type, mb.props));
-          selectedId = design.blocks[at].id;
-        }
+        if (!mb) return;
+        bHistory.record();
+        const insertAt = refIndex + (after ? 1 : 0);
+        const nb = makeBlock(mb.type, mb.props);
+        design.blocks.splice(insertAt, 0, nb);
+        selectedId = nb.id;
       } else return;
       commit();
     }
@@ -3715,22 +3845,29 @@ ${rows}
       const i = design.blocks.findIndex(x => x.id === id);
       if (i === -1) return;
       if (act === 'up' && i > 0) {
+        bHistory.record();
         [design.blocks[i - 1], design.blocks[i]] = [design.blocks[i], design.blocks[i - 1]];
       } else if (act === 'down' && i < design.blocks.length - 1) {
+        bHistory.record();
         [design.blocks[i + 1], design.blocks[i]] = [design.blocks[i], design.blocks[i + 1]];
       } else if (act === 'dup') {
+        bHistory.record();
         const copy = makeBlock(design.blocks[i].type, design.blocks[i].props);
         design.blocks.splice(i + 1, 0, copy);
         selectedId = copy.id;
       } else if (act === 'del') {
+        bHistory.record();
         design.blocks.splice(i, 1);
         if (selectedId === id) selectedId = null;
       } else if (act === 'save') {
+        // Saving to My Blocks doesn't change the design, so it isn't recorded.
         const name = prompt('Name this block for reuse:', TYPES[design.blocks[i].type].label);
         if (!name) return;
         myBlocks.push({ id: uid(), name, type: design.blocks[i].type,
           props: JSON.parse(JSON.stringify(design.blocks[i].props)) });
         toast(`“${name}” saved to My Blocks`);
+      } else {
+        return; // no-op (e.g. up at top / down at bottom) — don't re-render
       }
       commit();
     }
@@ -3746,6 +3883,7 @@ ${rows}
       renderCanvas();
       renderInspector();
       renderPalette();
+      bHistory.updateButtons();
     }
 
     /* ---- Palette ---- */
@@ -3769,6 +3907,7 @@ ${rows}
       grid.innerHTML = '';
       for (const [type, def] of Object.entries(TYPES)) {
         grid.appendChild(paletteItem(def.label, def.icon, 'text/block-type', type, () => {
+          bHistory.record();
           const b = makeBlock(type);
           design.blocks.push(b);
           selectedId = b.id;
@@ -3781,6 +3920,7 @@ ${rows}
       for (const mb of myBlocks) {
         const item = paletteItem(mb.name, TYPES[mb.type]?.icon || 'M4 4h16v16H4z',
           'text/my-block', mb.id, () => {
+            bHistory.record();
             const b = makeBlock(mb.type, mb.props);
             design.blocks.push(b);
             selectedId = b.id;
@@ -3822,7 +3962,13 @@ ${rows}
       }
       input.className = 'field-input';
       input.value = value ?? '';
+      // One recall point per edit session: snapshot when the field gains
+      // focus, and commit that snapshot to history when editing ends —
+      // so continuous typing/dragging a colour is a single undo step.
+      input.addEventListener('focus', () => bHistory.beginFieldEdit());
       input.addEventListener('input', () => onChange(input.value));
+      input.addEventListener('change', () => bHistory.endFieldEdit());
+      input.addEventListener('blur', () => bHistory.endFieldEdit());
       wrapEl.appendChild(input);
       return wrapEl;
     }
@@ -3939,6 +4085,9 @@ ${rows}
     }
 
     function loadDesign(d, name) {
+      // Recordable so a loaded template can be recalled back to the prior
+      // design (unless there was nothing to lose).
+      if (design.blocks.length) bHistory.record();
       design = d;
       selectedId = null;
       persist();
@@ -3969,7 +4118,7 @@ ${rows}
       $('#mode-builder').classList.toggle('active', builderOn);
       $('#mode-code').setAttribute('aria-selected', String(!builderOn));
       $('#mode-builder').setAttribute('aria-selected', String(builderOn));
-      if (builderOn) { renderPalette(); renderCanvas(); renderInspector(); }
+      if (builderOn) { renderPalette(); renderCanvas(); renderInspector(); bHistory.updateButtons(); }
     }
 
     /* ---- Wiring ---- */
@@ -4005,11 +4154,14 @@ ${rows}
       toast('Email HTML opened in the Code editor');
     });
     $('#btn-builder-clear').addEventListener('click', () => {
-      if (design.blocks.length && !confirm('Clear the current design?')) return;
+      if (design.blocks.length && !confirm('Clear the current design? You can bring it back with Recall.')) return;
+      if (design.blocks.length) bHistory.record(); // clearing is recallable
       design = blankDesign();
       selectedId = null;
       commit();
     });
+    $('#btn-recall').addEventListener('click', () => bHistory.undo());
+    $('#btn-recall-redo').addEventListener('click', () => bHistory.redo());
     // Drop onto empty canvas area appends at the end.
     $('#bcanvas').addEventListener('dragover', e => e.preventDefault());
     $('#bcanvas').addEventListener('drop', e => {
@@ -4025,10 +4177,23 @@ ${rows}
       commit();
     });
     document.addEventListener('keydown', (e) => {
-      if (!active || !selectedId) return;
+      if (!active) return;
       const tag = document.activeElement?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (e.key === 'Delete' || e.key === 'Backspace') {
+      const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+      // Recall Back / Redo — handled here (and stop the code editor's own
+      // undo from also firing) whenever the builder is the active surface.
+      if (mod && e.key.toLowerCase() === 'z') {
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (e.shiftKey) bHistory.redo(); else bHistory.undo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'y') { // Windows-style redo
+        e.preventDefault(); e.stopImmediatePropagation();
+        bHistory.redo();
+        return;
+      }
+      if (!inField && selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         blockAction(selectedId, 'del');
       }
