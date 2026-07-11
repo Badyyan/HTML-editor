@@ -52,8 +52,21 @@
 
 <script>
 (function () {
+  // Only ever redirect to a same-origin page of our own. A raw ?next=
+  // value could be an off-site URL (open redirect / phishing) or a
+  // "javascript:" URI (which executes when assigned to location) — both
+  // are rejected here, falling back to the dashboard.
+  function safeNext(raw) {
+    if (!raw) return 'dashboard.html';
+    try {
+      const u = new URL(raw, location.origin);
+      if (u.origin !== location.origin) return 'dashboard.html';
+      const rel = (u.pathname + u.search + u.hash).replace(/^\/+/, '');
+      return rel || 'dashboard.html';
+    } catch { return 'dashboard.html'; }
+  }
   // Already signed in → straight to the destination.
-  const next = new URLSearchParams(location.search).get('next') || 'dashboard.html';
+  const next = safeNext(new URLSearchParams(location.search).get('next'));
   if (AuroraAuth.current()) { location.replace(next); return; }
 
   const form = document.getElementById('login-form');

@@ -74,8 +74,16 @@ export default {
     // Folder listing proxy — the ImageKit Admin API requires the private key,
     // so the browser can't call it directly.
     if (url.pathname === '/list') {
+      // Confine listing to one base folder so this open, unauthenticated
+      // proxy can't enumerate the entire ImageKit account. The requested
+      // path is normalized and must sit inside BASE_PATH (default
+      // /email-assets); anything else falls back to the base folder.
+      const base = ('/' + (env.BASE_PATH || '/email-assets').replace(/^\/+|\/+$/g, ''));
+      let want = '/' + String(url.searchParams.get('path') || base)
+        .replace(/^\/+/, '').replace(/\.\.+/g, '');
+      if (want !== base && !want.startsWith(base + '/')) want = base;
       const api = new URL('https://api.imagekit.io/v1/files');
-      api.searchParams.set('path', url.searchParams.get('path') || '/');
+      api.searchParams.set('path', want);
       api.searchParams.set('sort', 'DESC_CREATED');
       api.searchParams.set('limit', url.searchParams.get('limit') || '60');
       api.searchParams.set('fileType', 'image');

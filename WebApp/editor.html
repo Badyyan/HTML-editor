@@ -1201,7 +1201,7 @@
         </div>
         <div class="preview-stage" id="preview-stage">
           <div class="device-frame desktop" id="device-frame">
-            <iframe id="preview-frame" title="Live preview" sandbox="allow-scripts allow-forms allow-popups allow-modals allow-same-origin"></iframe>
+            <iframe id="preview-frame" title="Live preview" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe>
           </div>
         </div>
       </div>
@@ -2353,6 +2353,16 @@
     const f = activeFile();
     if (!f) return;
     previewToken++;
+    // Security: never grant the previewed HTML both `allow-scripts` and
+    // `allow-same-origin` — together they let framed content escape the
+    // sandbox and read this origin's localStorage (account hashes/session).
+    // Normal preview runs scripts in an OPAQUE origin (can't reach our
+    // storage). Visual editing needs same-origin DOM access, so it instead
+    // drops `allow-scripts` — the previewed page's own scripts stay inert
+    // while its structure is edited. The two flags are never set together.
+    previewFrame.setAttribute('sandbox', visualEdit.enabled
+      ? 'allow-same-origin allow-forms allow-popups allow-modals'
+      : 'allow-scripts allow-forms allow-popups allow-modals');
     if (f.language === 'html') {
       previewFrame.srcdoc = f.content;
     } else {
@@ -3896,7 +3906,7 @@ ${rows}
       const card = document.createElement('div');
       card.className = 'tpl-card';
       card.innerHTML = `
-        <div class="tpl-thumb"><iframe loading="lazy" title="${attr(name)} preview"></iframe></div>
+        <div class="tpl-thumb"><iframe loading="lazy" sandbox title="${attr(name)} preview"></iframe></div>
         <div class="tpl-meta"><span class="tpl-name"></span>${deletable ? '<button class="tpl-del" title="Delete template" aria-label="Delete template"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' : ''}</div>`;
       card.querySelector('.tpl-name').textContent = name;
       card.querySelector('iframe').srcdoc = previewHtml;
