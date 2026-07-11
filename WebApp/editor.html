@@ -715,6 +715,14 @@
   .pal-item:active { cursor: grabbing; }
   .design-fields { padding: 2px 10px 8px; }
 
+  /* Default email typeface — mirrors the @font-face set embedded into
+     exported email HTML (buildEmailHTML), so the Builder canvas shows an
+     accurate WYSIWYG preview of what recipients with font support see. */
+  @font-face { font-family: 'Ping AR + LT'; src: url('fonts/PingARLT-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; }
+  @font-face { font-family: 'Ping AR + LT'; src: url('fonts/PingARLT-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; }
+  @font-face { font-family: 'Ping AR + LT'; src: url('fonts/PingARLT-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; }
+  @font-face { font-family: 'Ping AR + LT'; src: url('fonts/PingARLT-Heavy.woff2') format('woff2'); font-weight: 800; font-style: normal; }
+
   .canvas-wrap {
     overflow-y: auto; min-height: 0;
     display: flex; flex-direction: column; align-items: center;
@@ -1078,11 +1086,7 @@
       <span class="label">UTM</span>
     </button>
     <div class="toolbar-sep"></div>
-    <button class="tbtn" id="btn-open-file" title="Open HTML file (⌘O)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>
-      <span class="label">Open HTML File</span>
-    </button>
-    <button class="tbtn" id="btn-upload-file" title="Upload HTML file (⇧⌘O)">
+    <button class="tbtn" id="btn-upload-file" title="Upload HTML file (⌘O)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke-linecap="round"/></svg>
       <span class="label">Upload HTML File</span>
     </button>
@@ -1475,7 +1479,6 @@
 
 <div class="toast" id="toast"></div>
 
-<input type="file" id="file-input" multiple accept=".html,.htm" style="display:none;">
 <input type="file" id="upload-input" multiple accept=".html,.htm" style="display:none;">
 <input type="file" id="asset-file-input" multiple accept="image/*" style="display:none;">
 
@@ -2552,6 +2555,7 @@
           ${[12, 13, 14, 16, 18, 20, 24, 28, 32, 40].map(s => `<option>${s}px</option>`).join('')}</select>`,
         `<select data-act="ffam" title="Font family">
           <option value="">Font</option>
+          <option value="'Ping AR + LT',Tahoma,Arial,sans-serif">Ping AR + LT (default)</option>
           <option value="Arial,Helvetica,sans-serif">Arial</option>
           <option value="Georgia,serif">Georgia</option>
           <option value="'Times New Roman',serif">Times</option>
@@ -2884,37 +2888,8 @@
   })();
 
   /* =========================================================
-     File open / upload (HTML only)
+     File upload (HTML only)
   ========================================================= */
-  async function openHtmlFilePicker() {
-    if ('showOpenFilePicker' in window) {
-      let handles;
-      try {
-        handles = await window.showOpenFilePicker({
-          types: [{ description: 'HTML files', accept: { 'text/html': ['.html', '.htm'] } }],
-          multiple: true
-        });
-      } catch (err) { if (err.name !== 'AbortError') toast('Could not open file'); return; }
-      for (const handle of handles) {
-        const file = await handle.getFile();
-        const content = await file.text();
-        const id = newFile(handle.name, content, { handle });
-        openTab(id);
-      }
-      return;
-    }
-    $('#file-input').click();
-  }
-
-  $('#file-input').addEventListener('change', async (e) => {
-    for (const file of e.target.files) {
-      const content = await file.text();
-      const id = newFile(file.name, content, { dirty: false });
-      openTab(id);
-    }
-    e.target.value = '';
-  });
-
   $('#upload-input').addEventListener('change', async (e) => {
     const count = e.target.files.length;
     for (const file of e.target.files) {
@@ -2927,7 +2902,6 @@
   });
 
   $('#btn-new-tab').addEventListener('click', () => newUntitledTab());
-  $('#btn-open-file').addEventListener('click', () => openHtmlFilePicker());
   $('#btn-upload-file').addEventListener('click', () => $('#upload-input').click());
 
   /* =========================================================
@@ -3163,7 +3137,7 @@
 
   /* ---- Help modal ---- */
   const SHORTCUTS = [
-    [`${modLabel}N`, 'New tab'], [`${modLabel}O`, 'Open HTML file'], [`${modLabel}⇧O`, 'Upload HTML file'],
+    [`${modLabel}N`, 'New tab'], [`${modLabel}O`, 'Upload HTML file'],
     [`${modLabel}S`, 'Save'], [`${modLabel}⇧S`, 'Save As'], [`${modLabel}W`, 'Close tab'],
     [`${modLabel}F`, 'Find & Replace'], [`${modLabel}G / ⇧${modLabel}G`, 'Next / previous match'],
     [`${modLabel}D`, 'Select word / next occurrence'], [`${modLabel}R`, 'Refresh preview'],
@@ -3238,10 +3212,21 @@
       return 'data:image/svg+xml,' + encodeURIComponent(svg.replace(/\s+/g, ' '));
     }
 
+    // Ping AR + LT is the project's default email typeface (from the
+    // uploaded font kit). Clients that support @font-face render it;
+    // everything else falls back to Tahoma, which has solid Arabic +
+    // Latin coverage and ships on virtually every platform.
+    const FONT_STACK = "'Ping AR + LT', Tahoma, Arial, sans-serif";
+    const FONT_HOST = 'https://aurora-html-editor.vercel.app/fonts';
+    const FONT_WEIGHTS = [['Regular', 400], ['Medium', 500], ['Bold', 700], ['Heavy', 800]];
+    const FONT_FACE_EMAIL = FONT_WEIGHTS.map(([file, weight]) =>
+      `@font-face{font-family:'Ping AR + LT';src:url('${FONT_HOST}/PingARLT-${file}.woff2') format('woff2');font-weight:${weight};font-style:normal;}`
+    ).join('\n  ');
+
     const btnHtml = (p) =>
       `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${attr(p.align || 'center')}"><tr>
         <td style="background:${attr(p.btnBg || '#6366f1')};border-radius:${Number(p.btnRadius ?? 8)}px;">
-        <a href="${attr(p.btnUrl || '#')}" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${attr(p.btnColor || '#ffffff')};text-decoration:none;">${esc(p.btnLabel || 'Button')}</a>
+        <a href="${attr(p.btnUrl || '#')}" style="display:inline-block;padding:12px 28px;font-family:${FONT_STACK};font-size:14px;font-weight:bold;color:${attr(p.btnColor || '#ffffff')};text-decoration:none;">${esc(p.btnLabel || 'Button')}</a>
         </td></tr></table>`;
 
     const wrap = (inner, pad, bg) =>
@@ -3261,7 +3246,7 @@
         render: p => wrap(
           p.logoUrl
             ? `<img src="${attr(p.logoUrl)}" alt="${attr(p.brand)}" height="34" style="display:block;height:34px;">`
-            : `<div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;color:${attr(p.color)};">${esc(p.brand)}</div>`,
+            : `<div style="font-family:${FONT_STACK};font-size:20px;font-weight:bold;color:${attr(p.color)};">${esc(p.brand)}</div>`,
           '20px 28px', p.bg)
       },
       hero: {
@@ -3284,7 +3269,7 @@
         ],
         render: p => wrap(
           `${p.imageUrl ? `<img src="${attr(p.imageUrl)}" width="544" alt="" style="display:block;width:100%;height:auto;border-radius:8px;">` : ''}
-          <div style="font-family:Arial,Helvetica,sans-serif;text-align:${attr(p.align)};padding-top:22px;">
+          <div style="font-family:${FONT_STACK};text-align:${attr(p.align)};padding-top:22px;">
             <div style="font-size:26px;font-weight:bold;line-height:1.25;color:${attr(p.color)};">${esc(p.headline)}</div>
             <div style="font-size:14px;line-height:1.6;color:${attr(p.color)};opacity:0.75;padding:10px 8% 20px;">${nl2br(p.sub)}</div>
             ${btnHtml(p)}
@@ -3301,7 +3286,7 @@
           { k: 'bg', label: 'Background', t: 'color' }
         ],
         render: p => wrap(
-          `<div style="font-family:Arial,Helvetica,sans-serif;font-size:${Number(p.size) || 14}px;line-height:1.65;color:${attr(p.color)};text-align:${attr(p.align)};">${nl2br(p.content)}</div>`,
+          `<div style="font-family:${FONT_STACK};font-size:${Number(p.size) || 14}px;line-height:1.65;color:${attr(p.color)};text-align:${attr(p.align)};">${nl2br(p.content)}</div>`,
           '16px 28px', p.bg)
       },
       button: {
@@ -3352,7 +3337,7 @@
           `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
             <td width="42%" style="vertical-align:top;"><img src="${attr(p.imageUrl)}" width="220" alt="${attr(p.title)}" style="display:block;width:100%;height:auto;border-radius:8px;"></td>
             <td width="4%"></td>
-            <td style="vertical-align:top;font-family:Arial,Helvetica,sans-serif;">
+            <td style="vertical-align:top;font-family:${FONT_STACK};">
               <div style="font-size:16px;font-weight:bold;color:#111827;">${esc(p.title)}</div>
               <div style="font-size:15px;color:#6366f1;font-weight:bold;padding:4px 0 8px;">${esc(p.price)}</div>
               <div style="font-size:13px;line-height:1.55;color:#4b5563;padding-bottom:14px;">${nl2br(p.desc)}</div>
@@ -3375,7 +3360,7 @@
         render: p => wrap(
           `<div style="text-align:center;font-size:0;">
             ${[['leftTitle', 'leftText'], ['rightTitle', 'rightText']].map(([t, x]) =>
-              `<div class="stack" style="display:inline-block;width:49%;min-width:200px;vertical-align:top;text-align:left;font-family:Arial,Helvetica,sans-serif;">
+              `<div class="stack" style="display:inline-block;width:49%;min-width:200px;vertical-align:top;text-align:left;font-family:${FONT_STACK};">
                 <div style="padding:6px 10px;">
                   <div style="font-size:15px;font-weight:bold;color:#111827;padding-bottom:6px;">${esc(p[t])}</div>
                   <div style="font-size:13px;line-height:1.55;color:#4b5563;">${nl2br(p[x])}</div>
@@ -3416,7 +3401,7 @@
           { k: 'bg', label: 'Background', t: 'color' }
         ],
         render: p => wrap(
-          `<div style="text-align:center;font-family:Arial,Helvetica,sans-serif;">
+          `<div style="text-align:center;font-family:${FONT_STACK};">
             ${String(p.networks || '').split(',').map(s => s.trim()).filter(Boolean).map(n =>
               `<a href="#" style="display:inline-block;margin:0 4px 6px;padding:7px 14px;border-radius:999px;background:${attr(p.pillBg)};color:${attr(p.pillColor)};font-size:12px;text-decoration:none;">${esc(n)}</a>`
             ).join('')}
@@ -3438,11 +3423,152 @@
           { k: 'color', label: 'Text color', t: 'color' }
         ],
         render: p => wrap(
-          `<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${attr(p.color)};text-align:center;">
+          `<div style="font-family:${FONT_STACK};font-size:12px;line-height:1.7;color:${attr(p.color)};text-align:center;">
             <b>${esc(p.company)}</b><br>${esc(p.address)}<br>${nl2br(p.note)}<br>
             <a href="${attr(p.unsubUrl)}" style="color:${attr(p.color)};text-decoration:underline;">Unsubscribe</a> ·
             <a href="#" style="color:${attr(p.color)};text-decoration:underline;">View in browser</a>
           </div>`, '24px 28px', p.bg)
+      },
+      quote: {
+        label: 'Quote', icon: 'M7 7h4v5c0 2.2-1.2 3.8-3.2 4.6l-.8-1.4c1.2-.6 1.8-1.4 2-2.4H7V7zm8 0h4v5c0 2.2-1.2 3.8-3.2 4.6l-.8-1.4c1.2-.6 1.8-1.4 2-2.4h-2V7z',
+        defaults: {
+          quote: 'This tool cut our email production time in half — and it looks better than what our agency used to send us.',
+          name: 'Sara Al-Amin', role: 'Marketing Lead, Nova Retail', avatarUrl: '', color: '#111827', bg: '#ffffff'
+        },
+        fields: [
+          { k: 'quote', label: 'Quote', t: 'textarea' },
+          { k: 'name', label: 'Name', t: 'text' },
+          { k: 'role', label: 'Role / company', t: 'text' },
+          { k: 'avatarUrl', label: 'Avatar image URL (optional)', t: 'text' },
+          { k: 'color', label: 'Text color', t: 'color' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(
+          `<div style="font-family:${FONT_STACK};text-align:center;">
+            <div style="font-size:17px;line-height:1.6;color:${attr(p.color)};font-style:italic;padding-bottom:16px;">“${nl2br(p.quote)}”</div>
+            ${p.avatarUrl ? `<img src="${attr(p.avatarUrl)}" width="40" height="40" alt="" style="display:block;width:40px;height:40px;margin:0 auto 8px;border-radius:50%;">` : ''}
+            <div style="font-size:13px;font-weight:bold;color:${attr(p.color)};">${esc(p.name)}</div>
+            <div style="font-size:12px;color:${attr(p.color)};opacity:0.65;">${esc(p.role)}</div>
+          </div>`, '28px', p.bg)
+      },
+      features: {
+        label: '3-Up Features', icon: 'M4 5h5v5H4zM9.5 5h5v5h-5zM15 5h5v5h-5zM4 15h16',
+        defaults: {
+          title1: 'Free shipping', text1: 'On all orders over $50.',
+          title2: 'Easy returns', text2: '30-day no-questions-asked policy.',
+          title3: '24/7 support', text3: 'Real humans, always available.',
+          badgeBg: '#eef0ff', badgeColor: '#6366f1', bg: '#ffffff'
+        },
+        fields: [
+          { k: 'title1', label: 'Column 1 title', t: 'text' }, { k: 'text1', label: 'Column 1 text', t: 'textarea' },
+          { k: 'title2', label: 'Column 2 title', t: 'text' }, { k: 'text2', label: 'Column 2 text', t: 'textarea' },
+          { k: 'title3', label: 'Column 3 title', t: 'text' }, { k: 'text3', label: 'Column 3 text', t: 'textarea' },
+          { k: 'badgeBg', label: 'Badge background', t: 'color' },
+          { k: 'badgeColor', label: 'Badge color', t: 'color' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(
+          `<div style="text-align:center;font-size:0;">
+            ${[[p.title1, p.text1], [p.title2, p.text2], [p.title3, p.text3]].map(([t, x]) =>
+              `<div class="stack" style="display:inline-block;width:33%;min-width:160px;vertical-align:top;text-align:center;font-family:${FONT_STACK};">
+                <div style="padding:8px;">
+                  <div style="width:28px;height:28px;line-height:28px;border-radius:50%;background:${attr(p.badgeBg)};color:${attr(p.badgeColor)};font-size:13px;font-weight:bold;margin:0 auto 8px;">&check;</div>
+                  <div style="font-size:13px;font-weight:bold;color:#111827;padding-bottom:4px;">${esc(t)}</div>
+                  <div style="font-size:12px;line-height:1.5;color:#6b7280;">${nl2br(x)}</div>
+                </div></div>`).join('')}
+          </div>`, '20px 20px', p.bg)
+      },
+      video: {
+        label: 'Video', icon: 'M4 5h16v14H4zM10 9l6 3-6 3z',
+        defaults: {
+          thumbUrl: placeholder(600, 300, 'Video thumbnail'), videoUrl: 'https://',
+          caption: 'Watch the 90-second walkthrough', bg: '#ffffff'
+        },
+        fields: [
+          { k: 'thumbUrl', label: 'Thumbnail image URL', t: 'text' },
+          { k: 'videoUrl', label: 'Video link (opens in browser)', t: 'text' },
+          { k: 'caption', label: 'Caption', t: 'text' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(
+          `<a href="${attr(p.videoUrl)}" style="text-decoration:none;display:block;">
+            <img src="${attr(p.thumbUrl)}" width="544" alt="${attr(p.caption)}" style="display:block;width:100%;height:auto;border-radius:8px;">
+          </a>
+          ${p.caption ? `<div style="font-family:${FONT_STACK};font-size:13px;color:#6b7280;text-align:center;padding-top:10px;">${esc(p.caption)}</div>` : ''}`,
+          '14px 28px', p.bg)
+      },
+      coupon: {
+        label: 'Coupon', icon: 'M3 8a2 2 0 012-2h14a2 2 0 012 2v2a1.5 1.5 0 000 4v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2a1.5 1.5 0 000-4z',
+        defaults: {
+          label: 'Use code at checkout', code: 'SAVE20', note: 'Expires in 48 hours',
+          codeColor: '#111827', codeBg: '#f9fafb', borderColor: '#d1d5db', bg: '#ffffff'
+        },
+        fields: [
+          { k: 'label', label: 'Label', t: 'text' },
+          { k: 'code', label: 'Discount code', t: 'text' },
+          { k: 'note', label: 'Note (optional)', t: 'text' },
+          { k: 'codeColor', label: 'Code text color', t: 'color' },
+          { k: 'codeBg', label: 'Code box background', t: 'color' },
+          { k: 'borderColor', label: 'Border color', t: 'color' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(
+          `<div style="text-align:center;font-family:${FONT_STACK};">
+            ${p.label ? `<div style="font-size:13px;color:#6b7280;padding-bottom:10px;">${esc(p.label)}</div>` : ''}
+            <div style="display:inline-block;border:2px dashed ${attr(p.borderColor)};border-radius:8px;background:${attr(p.codeBg)};padding:12px 26px;">
+              <span style="font-size:20px;font-weight:bold;letter-spacing:2px;color:${attr(p.codeColor)};">${esc(p.code)}</span>
+            </div>
+            ${p.note ? `<div style="font-size:12px;color:#9ca3af;padding-top:10px;">${esc(p.note)}</div>` : ''}
+          </div>`, '22px 28px', p.bg)
+      },
+      rating: {
+        label: 'Rating', icon: 'M12 4l2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z',
+        defaults: {
+          stars: 5, review: 'Exactly what our team needed — simple, fast, and it just works.',
+          name: '— Verified customer', starColor: '#f59e0b', color: '#374151', bg: '#ffffff'
+        },
+        fields: [
+          { k: 'stars', label: 'Stars (0-5)', t: 'number' },
+          { k: 'review', label: 'Review text', t: 'textarea' },
+          { k: 'name', label: 'Attribution', t: 'text' },
+          { k: 'starColor', label: 'Star color', t: 'color' },
+          { k: 'color', label: 'Text color', t: 'color' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => {
+          const n = Math.max(0, Math.min(5, Number(p.stars) || 0));
+          const starRow = Array.from({ length: 5 }, (_, i) =>
+            `<span style="color:${i < n ? attr(p.starColor) : '#e5e7eb'};font-size:20px;">★</span>`).join('');
+          return wrap(
+            `<div style="text-align:center;font-family:${FONT_STACK};">
+              <div style="padding-bottom:10px;">${starRow}</div>
+              <div style="font-size:14px;line-height:1.6;color:${attr(p.color)};padding-bottom:8px;">${nl2br(p.review)}</div>
+              <div style="font-size:12px;color:${attr(p.color)};opacity:0.65;">${esc(p.name)}</div>
+            </div>`, '22px 28px', p.bg);
+        }
+      },
+      list: {
+        label: 'Checklist', icon: 'M4 7l2 2 3-3M4 13l2 2 3-3M4 19l2 2 3-3M11 7h9M11 13h9M11 19h9',
+        defaults: {
+          item1: 'Drag-and-drop email builder', item2: 'One-click UTM tracked links',
+          item3: 'Reusable templates and blocks', checkColor: '#10b981', color: '#111827', bg: '#ffffff'
+        },
+        fields: [
+          { k: 'item1', label: 'Item 1', t: 'text' },
+          { k: 'item2', label: 'Item 2', t: 'text' },
+          { k: 'item3', label: 'Item 3', t: 'text' },
+          { k: 'checkColor', label: 'Checkmark color', t: 'color' },
+          { k: 'color', label: 'Text color', t: 'color' },
+          { k: 'bg', label: 'Background', t: 'color' }
+        ],
+        render: p => wrap(
+          `<div style="font-family:${FONT_STACK};">
+            ${[p.item1, p.item2, p.item3].filter(Boolean).map(item =>
+              `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;"><tr>
+                <td style="width:22px;vertical-align:top;color:${attr(p.checkColor)};font-size:14px;font-weight:bold;">&check;</td>
+                <td style="font-size:14px;line-height:1.5;color:${attr(p.color)};">${esc(item)}</td>
+              </tr></table>`).join('')}
+          </div>`, '18px 28px', p.bg)
       }
     };
 
@@ -3478,7 +3604,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>Email</title>
 <style>
-  body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
+  ${FONT_FACE_EMAIL}
+  body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; font-family: ${FONT_STACK}; }
   img { border: 0; outline: none; }
   @media (max-width: 620px) {
     .container { width: 100% !important; }
@@ -3486,7 +3613,7 @@
   }
 </style>
 </head>
-<body style="margin:0;padding:0;background:${attr(d.pageBg)};">
+<body style="margin:0;padding:0;background:${attr(d.pageBg)};font-family:${FONT_STACK};">
 ${d.preheader ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${esc(d.preheader)}</div>` : ''}
 <center>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${attr(d.pageBg)}">
@@ -4632,7 +4759,7 @@ ${rows}
     }
     switch (e.key.toLowerCase()) {
       case 'n': e.preventDefault(); newUntitledTab(); break;
-      case 'o': e.preventDefault(); e.shiftKey ? $('#upload-input').click() : openHtmlFilePicker(); break;
+      case 'o': e.preventDefault(); $('#upload-input').click(); break;
       case 's': e.preventDefault(); e.shiftKey ? saveAsActive() : saveActive(); break;
       case 'w': e.preventDefault(); if (state.activeId) closeTab(state.activeId); break;
       case 'f': e.preventDefault(); openFindBar(); break;
