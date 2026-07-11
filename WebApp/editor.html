@@ -1350,6 +1350,16 @@
         <label class="switch"><input type="checkbox" id="setting-livepreview"><span class="track"></span></label>
       </div>
     </div>
+
+    <div class="tpl-section-label" style="margin-top:20px;">Workspace</div>
+    <div class="danger-note">
+      <b>Clear workspace</b> closes every open tab in this browser and starts
+      a single blank file. Your saved templates, custom blocks, and UTM
+      presets are kept — this only clears unsaved open tabs.
+      <div style="margin-top:10px;">
+        <button class="toggle-like danger" id="btn-clear-workspace" type="button">Clear workspace &amp; start fresh</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3372,6 +3382,21 @@
   $('#setting-completions').addEventListener('change', (e) => { settings.showCompletions = e.target.checked; persistSettings(); });
   $('#setting-livepreview').addEventListener('change', (e) => { settings.livePreview = e.target.checked; persistSettings(); });
 
+  $('#btn-clear-workspace').addEventListener('click', () => {
+    const tabCount = state.order.length;
+    const dirtyCount = state.order.reduce((n, id) => n + (state.files.get(id)?.dirty ? 1 : 0), 0);
+    const warn = dirtyCount
+      ? ` ${dirtyCount} tab${dirtyCount === 1 ? '' : 's'} have unsaved changes that will be lost.`
+      : '';
+    if (!confirm(`Close all ${tabCount} open tab${tabCount === 1 ? '' : 's'} and start fresh?${warn}`)) return;
+    state.order = [];
+    state.files.clear();
+    state.activeId = null;
+    newUntitledTab();
+    $('#settings-backdrop').classList.remove('open');
+    toast('Workspace cleared — starting fresh');
+  });
+
   /* ---- Help modal ---- */
   const SHORTCUTS = [
     [`${modLabel}N`, 'New tab'], [`${modLabel}O`, 'Open file'], [`${modLabel}⇧O`, 'Open folder'],
@@ -4847,6 +4872,17 @@ ${rows}
     applyFont();
     $('#status-wrap').setAttribute('aria-pressed', String(settings.wordWrap));
     toggleSidebar(settings.sidebarOpen !== false);
+
+    // "New email" on the dashboard promises a blank canvas — honor that by
+    // skipping session-restore for this one load, instead of silently
+    // reopening whatever was left over from a previous visit.
+    const wantsFresh = new URLSearchParams(location.search).get('new') === '1';
+    if (wantsFresh) {
+      history.replaceState(null, '', location.pathname + location.hash);
+      newUntitledTab();
+      renderTree();
+      return;
+    }
 
     const session = loadStore().session;
     if (session && session.tabs && session.tabs.length) {
