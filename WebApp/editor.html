@@ -700,6 +700,38 @@
     .builder { grid-template-columns: 190px 1fr 208px; }
   }
 
+  /* ---------- Phone layout (single column, tabbed) ---------- */
+  .builder-mtabs { display: none; }
+  @media (max-width: 700px) {
+    /* Code mode: hide the file sidebar, stack editor over preview. */
+    .workspace { grid-template-columns: 1fr; }
+    .workspace .sidebar, .workspace .workspace-divider { display: none; }
+    .editorpane { grid-template-columns: 1fr; grid-auto-rows: minmax(0, 1fr); }
+    .editorpane .pane-divider { display: none; }
+    .editorpane.preview-hidden { grid-template-columns: 1fr; }
+
+    /* Builder mode: one panel at a time, chosen by the tab bar. */
+    .builder.active { display: flex; flex-direction: column; }
+    .builder-mtabs { display: flex; flex: none; background: var(--sidebar); border-bottom: 1px solid var(--border); }
+    .builder-mtabs button {
+      flex: 1; padding: 12px 8px; background: transparent; border: none; border-bottom: 2px solid transparent;
+      color: var(--fg-dim); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    }
+    .builder-mtabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .builder > .palette, .builder > .canvas-wrap, .builder > .inspector {
+      display: none; flex: 1; min-height: 0; min-width: 0; width: 100%;
+      border-left: none; border-right: none;
+    }
+    .builder.mview-blocks > .palette { display: block; }
+    .builder.mview-canvas > .canvas-wrap { display: flex; }
+    .builder.mview-edit > .inspector { display: block; }
+
+    /* Belt-and-suspenders: the status bar's many chips and any stray wide
+       child must never push the whole page sideways on a phone. */
+    #app { overflow-x: hidden; }
+    .statusbar { overflow-x: auto; }
+  }
+
   .palette {
     background: var(--sidebar); border-right: 1px solid var(--border);
     overflow-y: auto; padding-bottom: 16px;
@@ -1258,6 +1290,11 @@
   </div>
 
   <div class="builder" id="builder">
+    <div class="builder-mtabs" role="tablist" aria-label="Builder panels">
+      <button type="button" data-mview="blocks" role="tab">Blocks</button>
+      <button type="button" data-mview="canvas" role="tab" class="active" aria-selected="true">Canvas</button>
+      <button type="button" data-mview="edit" role="tab">Edit</button>
+    </div>
     <div class="palette">
       <div class="sidebar-heading">Content Blocks</div>
       <div class="palette-grid" id="palette-grid"></div>
@@ -3956,10 +3993,23 @@ ${rows}
       commit();
     }
 
+    const isMobile = () => window.matchMedia('(max-width: 700px)').matches;
+    function setMobileView(view) {
+      const el = $('#builder');
+      el.classList.remove('mview-blocks', 'mview-canvas', 'mview-edit');
+      el.classList.add('mview-' + view);
+      $$('.builder-mtabs button').forEach(btn => {
+        const on = btn.dataset.mview === view;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', String(on));
+      });
+    }
+
     function select(id) {
       selectedId = id;
       renderCanvas();
       renderInspector();
+      if (id && isMobile()) setMobileView('edit'); // jump to the settings panel on phones
     }
 
     function commit() {
@@ -3996,6 +4046,7 @@ ${rows}
           design.blocks.push(b);
           selectedId = b.id;
           commit();
+          if (isMobile()) setMobileView('canvas'); // show the result on phones
         }));
       }
       const mineGrid = $('#myblocks-grid');
@@ -4009,6 +4060,7 @@ ${rows}
             design.blocks.push(b);
             selectedId = b.id;
             commit();
+            if (isMobile()) setMobileView('canvas');
           });
         item.addEventListener('contextmenu', (e) => {
           e.preventDefault();
@@ -4282,6 +4334,11 @@ ${rows}
     });
     $('#btn-recall').addEventListener('click', () => bHistory.undo());
     $('#btn-recall-redo').addEventListener('click', () => bHistory.redo());
+
+    // Mobile panel switcher (single-column layout on phones)
+    $('#builder').classList.add('mview-canvas');
+    $$('.builder-mtabs button').forEach(btn =>
+      btn.addEventListener('click', () => setMobileView(btn.dataset.mview)));
 
     /* ---- Copy / Download the generated email HTML ---- */
     async function copyEmailHTML() {
