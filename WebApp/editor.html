@@ -3635,7 +3635,8 @@
     let active = false;
 
     function blankDesign() {
-      return { dir: 'ltr', pageBg: '#f3f4f6', preheader: '', blocks: [] };
+      return { dir: 'ltr', pageBg: '#f3f4f6', preheader: '', blocks: [],
+        utm: { source: '', medium: '', campaign: '' } };
     }
     function persist() {
       saveStore({ builderDesign: design, myBlocks, templates });
@@ -3710,10 +3711,42 @@
       return TYPES[b.type] ? TYPES[b.type].render(b.props) : '';
     }
 
+    /* ---- Campaign tracking (UTM auto-tagging) ----
+       Set source/medium/campaign once in Design Settings; every eligible
+       link is tagged when the email is exported/opened, so the URLs you
+       edit stay clean and no CTA is ever forgotten. Applied only here (at
+       generation), never on the live canvas. */
+    const cleanUtm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, '-');
+    function shouldTrackLink(href) {
+      const h = (href || '').trim();
+      if (!h || h === 'https://' || h === 'http://') return false;   // unset button
+      if (/^(mailto:|tel:|sms:|#)/i.test(h)) return false;           // not campaign traffic
+      if (/unsub|opt-?out|preference/i.test(h)) return false;         // never tag unsubscribe
+      return /^https?:\/\//i.test(h);
+    }
+    function applyCampaignTracking(html, utm) {
+      if (!utm || !utm.source || !utm.medium || !utm.campaign) return html;
+      const params = {
+        utm_source: cleanUtm(utm.source),
+        utm_medium: cleanUtm(utm.medium),
+        utm_campaign: cleanUtm(utm.campaign)
+      };
+      return html.replace(/href="([^"]*)"/g, (full, rawHref) => {
+        const decoded = rawHref.replace(/&amp;/g, '&');
+        if (!shouldTrackLink(decoded)) return full;
+        let u;
+        try { u = new URL(decoded); } catch { return full; }
+        // set() after delete() keeps this idempotent — re-exporting never double-tags.
+        for (const [k, v] of Object.entries(params)) { u.searchParams.delete(k); u.searchParams.set(k, v); }
+        const out = u.toString().replace(/&/g, '&amp;').replace(/"/g, '%22');
+        return `href="${out}"`;
+      });
+    }
+
     /* ---- Full email document generation ---- */
     function buildEmailHTML(d) {
       const rows = d.blocks.map(b => `<tr><td>${renderBlock(b)}</td></tr>`).join('\n');
-      return `<!DOCTYPE html>
+      const html = `<!DOCTYPE html>
 <html lang="en" dir="${attr(d.dir)}">
 <head>
 <meta charset="UTF-8">
@@ -3743,6 +3776,7 @@ ${rows}
 </center>
 </body>
 </html>`;
+      return applyCampaignTracking(html, d.utm);
     }
 
     /* ---- Canvas ---- */
@@ -4019,6 +4053,42 @@ ${rows}
         design.pageBg, v => { design.pageBg = v; persist(); renderCanvas(); }));
       host.appendChild(fieldEl({ label: 'Preheader (hidden preview text)', t: 'text' },
         design.preheader, v => { design.preheader = v; persist(); }));
+
+      // Campaign tracking — set once, auto-applied to every link on export.
+      design.utm = design.utm || { source: '', medium: '', campaign: '' };
+      const secLabel = document.createElement('div');
+      secLabel.className = 'tpl-section-label';
+      secLabel.style.marginTop = '16px';
+      secLabel.textContent = 'Campaign tracking (UTM)';
+      host.appendChild(secLabel);
+      const hint = document.createElement('div');
+      hint.className = 'inspector-empty';
+      hint.style.paddingTop = '0';
+      hint.style.marginBottom = '4px';
+      hint.textContent = 'Fill these once — every link is tagged automatically when you open or export the code. The links you edit stay clean; unsubscribe and mailto links are never tagged.';
+      host.appendChild(hint);
+      const preview = document.createElement('div');
+      preview.className = 'assets-note';
+      preview.style.marginTop = '8px';
+      const updatePreview = () => {
+        const u = design.utm;
+        if (u.source && u.medium && u.campaign) {
+          const tagged = applyCampaignTracking('href="https://example.com/sale"', u)
+            .replace(/^href="|"$/g, '').replace(/&amp;/g, '&');
+          preview.textContent = 'Every link becomes: ' + tagged;
+        } else {
+          preview.textContent = 'Fill all three fields to turn tracking on.';
+        }
+      };
+      const utmField = (label, key) => host.appendChild(fieldEl(
+        { label, t: 'text' }, design.utm[key],
+        v => { design.utm[key] = v; persist(); updatePreview(); }
+      ));
+      utmField('utm_source (e.g. newsletter)', 'source');
+      utmField('utm_medium (e.g. email)', 'medium');
+      utmField('utm_campaign (e.g. spring-sale)', 'campaign');
+      host.appendChild(preview);
+      updatePreview();
     }
 
     /* ---- Starter templates ---- */
