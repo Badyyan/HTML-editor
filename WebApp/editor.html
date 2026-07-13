@@ -3312,7 +3312,7 @@
     const btnHtml = (p) =>
       `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${attr(p.align || 'center')}"><tr>
         <td style="background:${attr(p.btnBg || '#6366f1')};border-radius:${Number(p.btnRadius ?? 8)}px;">
-        <a href="${attr(p.btnUrl || '#')}" style="display:inline-block;padding:12px 28px;font-family:${FONT_STACK};font-size:14px;font-weight:bold;color:${attr(p.btnColor || '#ffffff')};text-decoration:none;">${esc(p.btnLabel || 'Button')}</a>
+        <a href="${attr(withUtmContent(p.btnUrl || '#', p.utmContent))}" style="display:inline-block;padding:12px 28px;font-family:${FONT_STACK};font-size:14px;font-weight:bold;color:${attr(p.btnColor || '#ffffff')};text-decoration:none;">${esc(p.btnLabel || 'Button')}</a>
         </td></tr></table>`;
 
     const wrap = (inner, pad, bg) =>
@@ -3341,7 +3341,7 @@
           imageUrl: placeholder(600, 240, 'Hero image'), headline: 'Big announcement',
           sub: 'A short supporting sentence that sells the click.',
           btnLabel: 'Get started', btnUrl: 'https://', btnBg: '#6366f1', btnColor: '#ffffff',
-          btnRadius: 8, bg: '#ffffff', color: '#111827', align: 'center'
+          btnRadius: 8, bg: '#ffffff', color: '#111827', align: 'center', utmContent: ''
         },
         fields: [
           { k: 'imageUrl', label: 'Image URL', t: 'text' },
@@ -3349,6 +3349,7 @@
           { k: 'sub', label: 'Subtext', t: 'textarea' },
           { k: 'btnLabel', label: 'Button label', t: 'text' },
           { k: 'btnUrl', label: 'Button URL', t: 'text' },
+          { k: 'utmContent', label: 'Tracking tag (utm_content, optional)', t: 'text' },
           { k: 'btnBg', label: 'Button color', t: 'color' },
           { k: 'bg', label: 'Background', t: 'color' },
           { k: 'color', label: 'Text color', t: 'color' }
@@ -3377,10 +3378,11 @@
       },
       button: {
         label: 'Button', icon: 'M5 9h14v6H5z',
-        defaults: { btnLabel: 'Shop now', btnUrl: 'https://', btnBg: '#6366f1', btnColor: '#ffffff', btnRadius: 8, align: 'center', bg: '#ffffff' },
+        defaults: { btnLabel: 'Shop now', btnUrl: 'https://', btnBg: '#6366f1', btnColor: '#ffffff', btnRadius: 8, align: 'center', bg: '#ffffff', utmContent: '' },
         fields: [
           { k: 'btnLabel', label: 'Label', t: 'text' },
           { k: 'btnUrl', label: 'URL', t: 'text' },
+          { k: 'utmContent', label: 'Tracking tag (utm_content, optional)', t: 'text' },
           { k: 'btnBg', label: 'Button color', t: 'color' },
           { k: 'btnColor', label: 'Label color', t: 'color' },
           { k: 'btnRadius', label: 'Corner radius', t: 'number' },
@@ -3408,7 +3410,7 @@
         defaults: {
           imageUrl: placeholder(260, 200, 'Product'), title: 'Product name', price: '$49',
           desc: 'One line about why this product is great.',
-          btnLabel: 'View product', btnUrl: 'https://', btnBg: '#111827', btnColor: '#ffffff', btnRadius: 6, bg: '#ffffff'
+          btnLabel: 'View product', btnUrl: 'https://', btnBg: '#111827', btnColor: '#ffffff', btnRadius: 6, bg: '#ffffff', utmContent: ''
         },
         fields: [
           { k: 'imageUrl', label: 'Image URL', t: 'text' },
@@ -3417,6 +3419,7 @@
           { k: 'desc', label: 'Description', t: 'textarea' },
           { k: 'btnLabel', label: 'Button label', t: 'text' },
           { k: 'btnUrl', label: 'Button URL', t: 'text' },
+          { k: 'utmContent', label: 'Tracking tag (utm_content, optional)', t: 'text' },
           { k: 'bg', label: 'Background', t: 'color' }
         ],
         render: p => wrap(
@@ -3749,6 +3752,21 @@
        edit stay clean and no CTA is ever forgotten. Applied only here (at
        generation), never on the live canvas. */
     const cleanUtm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, '-');
+    // Per-button override: bake utm_content into a CTA's own URL so two
+    // buttons in the same email can be told apart in analytics. Campaign
+    // tagging (source/medium/campaign) is layered on top at export and
+    // leaves utm_content untouched. Only applied to real, set URLs.
+    function withUtmContent(url, content) {
+      const u = String(url || '');
+      if (!content || !content.trim()) return u;
+      const t = u.trim();
+      if (!/^https?:\/\/.+/.test(t) || t === 'https://' || t === 'http://') return u;
+      try {
+        const parsed = new URL(t);
+        parsed.searchParams.set('utm_content', cleanUtm(content));
+        return parsed.toString();
+      } catch { return u; }
+    }
     function shouldTrackLink(href) {
       const h = (href || '').trim();
       if (!h || h === 'https://' || h === 'http://') return false;   // unset button
