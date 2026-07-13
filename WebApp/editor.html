@@ -758,6 +758,18 @@
   .pal-item:active { cursor: grabbing; }
   .design-fields { padding: 2px 10px 8px; }
 
+  /* Project switcher at the top of the palette */
+  .project-bar { display: flex; gap: 6px; align-items: center; padding: 9px 10px; border-bottom: 1px solid var(--border); }
+  .project-select { flex: 1; min-width: 0; padding: 6px 8px; font-size: 12px; }
+  .project-actions { display: flex; gap: 3px; flex: none; }
+  .project-actions button {
+    width: 27px; height: 27px; border: 1px solid var(--border); background: var(--panel);
+    color: var(--fg-dim); border-radius: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .project-actions button:hover { border-color: var(--accent); color: var(--fg); }
+  .project-actions button svg { width: 13px; height: 13px; }
+
   /* Default email typeface — mirrors the @font-face set embedded into
      exported email HTML (buildEmailHTML), so the Builder canvas shows an
      accurate WYSIWYG preview of what recipients with font support see. */
@@ -1321,6 +1333,7 @@
       <button type="button" data-mview="edit" role="tab">Edit</button>
     </div>
     <div class="palette">
+      <div class="project-bar" id="project-bar"></div>
       <div class="sidebar-heading">Content Blocks</div>
       <div class="palette-grid" id="palette-grid"></div>
       <div class="sidebar-heading" id="myblocks-heading" style="display:none;">My Blocks</div>
@@ -3766,7 +3779,6 @@
 
     /* ---- State ---- */
     const store0 = loadStore();
-    let design = store0.builderDesign || blankDesign();
     let myBlocks = store0.myBlocks || [];
     let templates = store0.templates || [];
     let selectedId = null;
@@ -3776,8 +3788,24 @@
       return { dir: 'ltr', pageBg: '#f3f4f6', preheader: '', blocks: [],
         utm: { source: '', medium: '', campaign: '' } };
     }
+
+    /* ---- Projects: keep several named campaigns and switch between them.
+       The active project's design IS the working `design`; persist() keeps
+       the project slot pointed at it. Existing single designs migrate into
+       a first project automatically. */
+    let projects = Array.isArray(store0.builderProjects) && store0.builderProjects.length
+      ? store0.builderProjects
+      : [{ id: uid(), name: 'Untitled campaign', design: store0.builderDesign || blankDesign(), updated: Date.now() }];
+    let currentId = projects.some(p => p.id === store0.builderCurrentId)
+      ? store0.builderCurrentId : projects[0].id;
+    const currentProject = () => projects.find(p => p.id === currentId) || projects[0];
+    let design = currentProject().design;
+
     function persist() {
-      saveStore({ builderDesign: design, myBlocks, templates });
+      const cp = currentProject();
+      if (cp) { cp.design = design; cp.updated = Date.now(); }
+      saveStore({ builderProjects: projects, builderCurrentId: currentId,
+        builderDesign: design, myBlocks, templates });
     }
 
     /* ---- Recall Back: multi-level history for the builder design ----
@@ -4084,6 +4112,77 @@ ${rows}
       renderInspector();
       renderPalette();
       bHistory.updateButtons();
+    }
+
+    /* ---- Projects ---- */
+    function loadActiveProject() {
+      design = currentProject().design;
+      selectedId = null;
+      bHistory.reset();
+      renderProjectBar();
+      commit();
+    }
+    function switchProject(id) {
+      if (id === currentId) return;
+      persist();                 // save the one we're leaving
+      currentId = id;
+      loadActiveProject();
+      toast(`Switched to “${currentProject().name}”`);
+    }
+    function newProject() {
+      const name = prompt('Name this project:', 'Campaign ' + (projects.length + 1));
+      if (!name) return;
+      persist();
+      const proj = { id: uid(), name: name.trim(), design: blankDesign(), updated: Date.now() };
+      projects.push(proj);
+      currentId = proj.id;
+      loadActiveProject();
+      toast(`Created “${proj.name}”`);
+    }
+    function renameProject() {
+      const cp = currentProject();
+      const name = prompt('Rename project:', cp.name);
+      if (!name || !name.trim()) return;
+      cp.name = name.trim();
+      persist();
+      renderProjectBar();
+    }
+    function deleteProject() {
+      if (projects.length <= 1) { toast('Keep at least one project'); return; }
+      const cp = currentProject();
+      if (!confirm(`Delete project “${cp.name}”? This can’t be undone.`)) return;
+      projects = projects.filter(p => p.id !== currentId);
+      currentId = projects[0].id;
+      loadActiveProject();
+      toast(`Deleted “${cp.name}”`);
+    }
+    function renderProjectBar() {
+      const host = $('#project-bar');
+      if (!host) return;
+      host.innerHTML = '';
+      const sel = document.createElement('select');
+      sel.className = 'field-input project-select';
+      sel.title = 'Switch project';
+      for (const pr of projects) {
+        const o = document.createElement('option');
+        o.value = pr.id; o.textContent = pr.name;
+        if (pr.id === currentId) o.selected = true;
+        sel.appendChild(o);
+      }
+      sel.addEventListener('change', () => switchProject(sel.value));
+      const actions = document.createElement('div');
+      actions.className = 'project-actions';
+      const mk = (title, svg, fn) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.title = title; b.setAttribute('aria-label', title);
+        b.innerHTML = svg; b.addEventListener('click', fn); return b;
+      };
+      actions.append(
+        mk('New project', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>', newProject),
+        mk('Rename project', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z" stroke-linecap="round" stroke-linejoin="round"/></svg>', renameProject),
+        mk('Delete project', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg>', deleteProject)
+      );
+      host.append(sel, actions);
     }
 
     /* ---- Palette ---- */
@@ -4395,7 +4494,7 @@ ${rows}
       $('#mode-builder').classList.toggle('active', builderOn);
       $('#mode-code').setAttribute('aria-selected', String(!builderOn));
       $('#mode-builder').setAttribute('aria-selected', String(builderOn));
-      if (builderOn) { renderPalette(); renderCanvas(); renderInspector(); bHistory.updateButtons(); }
+      if (builderOn) { renderProjectBar(); renderPalette(); renderCanvas(); renderInspector(); bHistory.updateButtons(); }
     }
 
     /* ---- Wiring ---- */
