@@ -1370,6 +1370,9 @@
         <button class="tbtn icon-only" id="btn-download-html" title="Download the email as an .html file">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 10l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" stroke-linecap="round"/></svg>
         </button>
+        <button class="tbtn icon-only" id="btn-sendtest" title="Send a test email of this design to yourself">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <button class="tbtn" id="btn-builder-clear" title="Start a blank design">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg>
           <span class="label">Clear</span>
@@ -1468,6 +1471,23 @@
     <div class="inspector-empty" id="tpl-mine-empty" style="margin-top:4px;">
       Nothing saved yet — build something, then use “Save template”.
     </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="sendtest-backdrop">
+  <div class="modal">
+    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Send a test</h2>
+    <p class="sub">Email this design to yourself to see it in a real inbox.</p>
+    <label class="field-label" for="st-to">Send to</label>
+    <input class="field-input" id="st-to" type="email" placeholder="you@example.com" autocomplete="email">
+    <label class="field-label" for="st-subject">Subject</label>
+    <input class="field-input" id="st-subject" type="text" placeholder="Test email">
+    <div id="st-relay-wrap">
+      <label class="field-label" for="st-relay">Relay URL <span style="font-weight:400">(one-time setup — see Server/email-relay)</span></label>
+      <input class="field-input" id="st-relay" type="text" placeholder="https://email-relay.you.workers.dev" spellcheck="false" autocomplete="off">
+    </div>
+    <div class="int-msg" id="st-msg" role="status"></div>
+    <button class="primary-btn" id="st-send" style="margin-top:16px;">Send test</button>
   </div>
 </div>
 
@@ -4562,6 +4582,50 @@ ${rows}
       downloadFile('email.html', buildEmailHTML(design));
     });
 
+    /* ---- Send a test email (via the email-relay Worker) ---- */
+    const stMsg = (kind, text) => {
+      const m = $('#st-msg'); m.textContent = text || '';
+      m.className = 'int-msg' + (kind ? ' ' + kind : '');
+    };
+    $('#btn-sendtest').addEventListener('click', () => {
+      if (!design.blocks.length) { toast('Add some blocks first'); return; }
+      const relay = (loadStore().emailRelay || {}).url || '';
+      let email = '';
+      try { email = (JSON.parse(localStorage.getItem('aurora-session') || '{}') || {}).email || ''; } catch {}
+      $('#st-to').value = email;
+      if (!$('#st-subject').value) $('#st-subject').value = 'Test: ' + (currentProject().name || 'email design');
+      $('#st-relay').value = relay;
+      $('#st-relay-wrap').style.display = relay ? 'none' : '';
+      stMsg('', '');
+      $('#sendtest-backdrop').classList.add('open');
+    });
+    $('#st-send').addEventListener('click', async () => {
+      const to = $('#st-to').value.trim();
+      const subject = $('#st-subject').value.trim() || 'Test email';
+      const relay = $('#st-relay').value.trim().replace(/\/$/, '');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to)) { stMsg('err', 'Enter a valid email address.'); return; }
+      if (!/^https:\/\/.+/.test(relay)) { stMsg('err', 'Enter your relay URL (https://…). See Server/email-relay in the repo.'); return; }
+      saveStore({ emailRelay: { url: relay } });
+      $('#st-relay-wrap').style.display = 'none';
+      stMsg('busy', 'Sending…');
+      $('#st-send').disabled = true;
+      try {
+        const res = await fetch(relay + '/send', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, subject, html: buildEmailHTML(design) })
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || body.message || ('relay returned ' + res.status));
+        stMsg('ok', 'Sent! Check your inbox (and spam folder).');
+        toast('Test email sent to ' + to);
+        setTimeout(() => $('#sendtest-backdrop').classList.remove('open'), 1000);
+      } catch (err) {
+        stMsg('err', 'Could not send: ' + err.message);
+      } finally {
+        $('#st-send').disabled = false;
+      }
+    });
+
     /* ---- Pre-send check ----
        Parses the generated email and surfaces the mistakes that quietly
        break real sends: dead links, missing alt text, no unsubscribe, no
@@ -5429,6 +5493,7 @@ ${rows}
         else if ($('#templates-backdrop').classList.contains('open')) $('#templates-backdrop').classList.remove('open');
         else if ($('#presend-backdrop').classList.contains('open')) $('#presend-backdrop').classList.remove('open');
         else if ($('#fields-backdrop').classList.contains('open')) $('#fields-backdrop').classList.remove('open');
+        else if ($('#sendtest-backdrop').classList.contains('open')) $('#sendtest-backdrop').classList.remove('open');
         else if ($('#utm-backdrop').classList.contains('open')) $('#utm-backdrop').classList.remove('open');
         else if ($('#findbar').classList.contains('open') && document.activeElement !== inputEl) closeFindBar();
       }

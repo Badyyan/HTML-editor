@@ -1,0 +1,18 @@
+# Cloudflare Worker config for the HTMLStudio send-test email relay.
+#
+# Secret (never put the key in this file):
+#   npx wrangler secret put RESEND_API_KEY
+#
+# Then deploy:
+#   npx wrangler deploy
+
+name = "email-relay"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+# ALLOWED_ORIGIN = "https://editor.example.com"
+# FROM_ADDRESS = "HTMLStudio <hello@yourdomain.com>"
+# Restrict who can be emailed so this can't be used as a spam relay.
+# Strongly recommended — set it to your own address(es).
+# ALLOWED_RECIPIENTS = "you@example.com"
