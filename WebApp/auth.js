@@ -16,21 +16,18 @@
   const USERS_KEY = 'aurora-users.v1';
   const SESSION_KEY = 'aurora-session';
 
-  function storageOK() {
-    try {
-      localStorage.setItem('__aurora_probe__', '1');
-      localStorage.removeItem('__aurora_probe__');
-      return true;
-    } catch { return false; }
-  }
+  // Persistence routes through AuroraData (the migration seam, datastore.js).
+  // In Phase 1 that is a localStorage adapter, so behaviour is unchanged;
+  // Phase 2 swaps the account/session storage to Supabase Auth here.
+  const store = () => window.AuroraData || {
+    available: false, get: () => null, set: () => false, remove: () => {},
+    getJSON: (_k, f) => f, setJSON: () => false
+  };
 
-  function loadUsers() {
-    try { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); }
-    catch { return []; }
-  }
-  function saveUsers(users) {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  }
+  function storageOK() { return !!store().available; }
+
+  function loadUsers() { return store().getJSON(USERS_KEY, []); }
+  function saveUsers(users) { store().setJSON(USERS_KEY, users); }
 
   // Password hashing. New accounts use PBKDF2-HMAC-SHA256 with a high
   // iteration count (slow to brute-force). Older accounts created before
@@ -122,16 +119,15 @@
   }
 
   function startSession(user) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ ...user, ts: Date.now() }));
+    store().setJSON(SESSION_KEY, { ...user, ts: Date.now() });
   }
 
   function current() {
-    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
-    catch { return null; }
+    return store().getJSON(SESSION_KEY, null);
   }
 
   function logout() {
-    try { localStorage.removeItem(SESSION_KEY); } catch {}
+    store().remove(SESSION_KEY);
   }
 
   /** Redirect to login when signed out. Call at the top of protected pages. */

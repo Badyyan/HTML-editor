@@ -3,13 +3,14 @@
 <meta name="color-scheme" content="light dark">
   <link rel="stylesheet" href="fonts.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="datastore.js"></script>
 <script>
 /* Auth guard: the editor is reached through the dashboard. If storage is
    unavailable (embeds, previews), fail open — there is nothing to protect
    in that context since accounts live in the same storage. */
 (function () {
   try {
-    if (!localStorage.getItem('aurora-session')) {
+    if (!AuroraData.get('aurora-session')) {
       location.replace('login.html?next=editor.html');
     }
   } catch (e) { /* storage blocked: allow */ }
@@ -1891,24 +1892,18 @@
      Persistence
   ========================================================= */
   const STORE_KEY = 'aurora-editor.v1';
-  // localStorage can throw (private browsing, strict cookie blocking, opaque
-  // origins) — the app must still start up and function without persistence.
-  let storageAvailable = true;
-  try {
-    localStorage.setItem('__aurora_probe__', '1');
-    localStorage.removeItem('__aurora_probe__');
-  } catch { storageAvailable = false; }
+  // All workspace persistence routes through AuroraData (the migration seam,
+  // datastore.js). In Phase 1 that is a localStorage adapter, so behaviour is
+  // unchanged; Phase 2/3 swaps in a remote adapter without touching this code.
+  let storageAvailable = !!(window.AuroraData && window.AuroraData.available);
 
   function loadStore() {
-    if (!storageAvailable) return {};
-    try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch { return {}; }
+    return window.AuroraData ? AuroraData.getJSON(STORE_KEY, {}) : {};
   }
   function saveStore(partial) {
-    if (!storageAvailable) return;
-    try {
-      const cur = loadStore();
-      localStorage.setItem(STORE_KEY, JSON.stringify(Object.assign(cur, partial)));
-    } catch { storageAvailable = false; }
+    if (!window.AuroraData) return;
+    const cur = loadStore();
+    AuroraData.setJSON(STORE_KEY, Object.assign(cur, partial));
   }
 
   const DEFAULT_SETTINGS = {

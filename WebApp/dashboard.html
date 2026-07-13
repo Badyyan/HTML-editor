@@ -6,6 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <title>Dashboard — HTMLStudio</title>
 <link rel="stylesheet" href="aurora.css">
+<script src="datastore.js"></script>
 <script src="auth.js"></script>
 <script>
   // Apply saved theme before first paint to avoid a flash.
@@ -89,9 +90,8 @@
   document.getElementById('avatar').textContent =
     (session.name.trim()[0] || 'A').toUpperCase();
 
-  // Workspace stats come from the editor's own store.
-  let store = {};
-  try { store = JSON.parse(localStorage.getItem('aurora-editor.v1') || '{}'); } catch {}
+  // Workspace stats come from the editor's own store (via the AuroraData seam).
+  const store = window.AuroraData ? AuroraData.getJSON('aurora-editor.v1', {}) : {};
   document.getElementById('stat-templates').textContent = (store.templates || []).length;
   document.getElementById('stat-blocks').textContent = (store.myBlocks || []).length;
   document.getElementById('stat-presets').textContent = (store.utmPresets || []).length;
