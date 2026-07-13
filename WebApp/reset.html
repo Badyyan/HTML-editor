@@ -33,7 +33,7 @@
       <p class="sub">Enter your account email and we’ll issue a 6-digit reset code.</p>
 
       <label class="field-label" for="email">Email</label>
-      <input class="field-input" id="email" type="email" autocomplete="email" required>
+      <input class="field-input" id="email" autofocus type="email" autocomplete="email" required>
 
       <div class="auth-msg" id="request-msg" role="alert"></div>
 
@@ -50,7 +50,7 @@
              style="letter-spacing:0.3em;font-family:var(--code-font);" required>
 
       <label class="field-label" for="new-password">New password <span style="font-weight:400">(8+ characters)</span></label>
-      <input class="field-input" id="new-password" type="password" autocomplete="new-password" minlength="8" required>
+      <input class="field-input" id="new-password" type="password" data-strength autocomplete="new-password" minlength="8" required>
 
       <div class="auth-msg" id="apply-msg" role="alert"></div>
 

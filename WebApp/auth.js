@@ -177,6 +177,68 @@
     return true;
   }
 
+  /* ---- Password field UX: show/hide toggle + strength meter ----
+     Runs automatically on any page that loads auth.js. Every
+     input[type=password] gets a reveal toggle; those marked
+     data-strength also get a live strength meter. */
+  function scorePassword(pw) {
+    if (!pw) return { level: 0, label: '' };
+    let s = 0;
+    if (pw.length >= 8) s++;
+    if (pw.length >= 12) s++;
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
+    if (/\d/.test(pw)) s++;
+    if (/[^A-Za-z0-9]/.test(pw)) s++;
+    const level = Math.min(4, Math.max(1, Math.ceil(s / 1.25)));
+    return { level, label: { 1: 'Weak', 2: 'Fair', 3: 'Good', 4: 'Strong' }[level] };
+  }
+  const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="2.6"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3l18 18M10.6 10.6a2.6 2.6 0 003.7 3.7M9.9 5.2A9.6 9.6 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.3 4M6.1 6.2A17 17 0 002 12s3.6 7 10 7a9.5 9.5 0 004-.9" stroke-linecap="round"/></svg>';
+
+  function enhancePasswordFields() {
+    document.querySelectorAll('input[type="password"]').forEach(input => {
+      if (input.closest('.pw-field')) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'pw-field';
+      input.parentNode.insertBefore(wrap, input);
+      wrap.appendChild(input);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pw-toggle';
+      btn.setAttribute('aria-label', 'Show password');
+      btn.innerHTML = EYE;
+      btn.addEventListener('click', () => {
+        const revealing = input.type === 'password';
+        input.type = revealing ? 'text' : 'password';
+        btn.innerHTML = revealing ? EYE_OFF : EYE;
+        btn.setAttribute('aria-label', revealing ? 'Hide password' : 'Show password');
+        input.focus();
+      });
+      wrap.appendChild(btn);
+
+      if (input.hasAttribute('data-strength')) {
+        const meter = document.createElement('div');
+        meter.className = 'pw-strength';
+        meter.setAttribute('aria-hidden', 'true');
+        meter.innerHTML = '<div class="pw-bars"><i></i><i></i><i></i><i></i></div><span class="pw-strength-label"></span>';
+        wrap.insertAdjacentElement('afterend', meter);
+        const update = () => {
+          const r = scorePassword(input.value);
+          meter.className = 'pw-strength lvl-' + r.level;
+          meter.querySelector('.pw-strength-label').textContent = input.value ? r.label : '';
+        };
+        input.addEventListener('input', update);
+        update();
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', enhancePasswordFields);
+  } else {
+    enhancePasswordFields();
+  }
+
   window.AuroraAuth = {
     signup, login, logout, current, requireAuth,
     requestReset, applyReset, storageOK

@@ -32,13 +32,13 @@
       <p class="sub">Free, instant, no email verification — start building in seconds.</p>
 
       <label class="field-label" for="name">Name</label>
-      <input class="field-input" id="name" type="text" autocomplete="name" required>
+      <input class="field-input" id="name" autofocus type="text" autocomplete="name" required>
 
       <label class="field-label" for="email">Email</label>
       <input class="field-input" id="email" type="email" autocomplete="email" required>
 
       <label class="field-label" for="password">Password <span style="font-weight:400">(8+ characters)</span></label>
-      <input class="field-input" id="password" type="password" autocomplete="new-password" minlength="8" required>
+      <input class="field-input" id="password" type="password" data-strength autocomplete="new-password" minlength="8" required>
 
       <div class="auth-msg" id="msg" role="alert"></div>
 
