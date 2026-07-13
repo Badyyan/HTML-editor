@@ -830,6 +830,20 @@
   .insp-actions button:hover { border-color: var(--accent); }
   .insp-actions button.danger { color: var(--danger); }
 
+  /* Pre-send check results */
+  .presend-summary { font-size: 13px; font-weight: 600; padding: 6px 0 12px; }
+  .presend-summary.clean { color: var(--live); }
+  .presend-summary.has-warn { color: var(--warn); }
+  .presend-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 9px 0; border-top: 1px solid var(--border);
+    font-size: 12.5px; color: var(--fg); line-height: 1.5;
+  }
+  .presend-item .presend-ico { flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; }
+  .presend-item.ok   .presend-ico { background: var(--live); }
+  .presend-item.warn .presend-ico { background: var(--warn); }
+  .presend-item.info .presend-ico { background: var(--fg-dim); }
+
   /* ---------- Template library & UTM modals ---------- */
   .modal.wide { width: min(760px, 94vw); }
   .tpl-grid {
@@ -1263,6 +1277,10 @@
           <span class="label">Redo</span>
         </button>
         <span class="canvas-toolbar-sep" aria-hidden="true"></span>
+        <button class="tbtn" id="btn-presend" title="Pre-send check — scan for common email mistakes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="label">Check</span>
+        </button>
         <button class="tbtn" id="btn-save-template" title="Save current design to the Template Library">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h11l3 3v13H5V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>
           <span class="label">Save template</span>
@@ -1270,6 +1288,12 @@
         <button class="tbtn" id="btn-export-code" title="Generate email HTML and open it in the Code editor">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4l-5 8 5 8M16 4l5 8-5 8"/></svg>
           <span class="label">Open in Code</span>
+        </button>
+        <button class="tbtn icon-only" id="btn-copy-html" title="Copy the email HTML to the clipboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h8" stroke-linecap="round"/></svg>
+        </button>
+        <button class="tbtn icon-only" id="btn-download-html" title="Download the email as an .html file">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 10l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" stroke-linecap="round"/></svg>
         </button>
         <button class="tbtn" id="btn-builder-clear" title="Start a blank design">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg>
@@ -1369,6 +1393,14 @@
     <div class="inspector-empty" id="tpl-mine-empty" style="margin-top:4px;">
       Nothing saved yet — build something, then use “Save template”.
     </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="presend-backdrop">
+  <div class="modal">
+    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Pre-send check</h2>
+    <p class="sub">A quick scan for the things that quietly break emails — worth a look before you send.</p>
+    <div id="presend-results"></div>
   </div>
 </div>
 
@@ -4232,6 +4264,123 @@ ${rows}
     });
     $('#btn-recall').addEventListener('click', () => bHistory.undo());
     $('#btn-recall-redo').addEventListener('click', () => bHistory.redo());
+
+    /* ---- Copy / Download the generated email HTML ---- */
+    async function copyEmailHTML() {
+      if (!design.blocks.length) { toast('Add some blocks first'); return; }
+      const html = buildEmailHTML(design);
+      try { await navigator.clipboard.writeText(html); }
+      catch {
+        const ta = document.createElement('textarea');
+        ta.value = html; document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy'); ta.remove();
+      }
+      toast('Email HTML copied to clipboard');
+    }
+    $('#btn-copy-html').addEventListener('click', copyEmailHTML);
+    $('#btn-download-html').addEventListener('click', () => {
+      if (!design.blocks.length) { toast('Add some blocks first'); return; }
+      downloadFile('email.html', buildEmailHTML(design));
+    });
+
+    /* ---- Pre-send check ----
+       Parses the generated email and surfaces the mistakes that quietly
+       break real sends: dead links, missing alt text, no unsubscribe, no
+       preheader, placeholder art, and heavy embedded images. */
+    function runPresendCheck() {
+      const html = buildEmailHTML(design);
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const anchors = [...doc.querySelectorAll('a')];
+      const imgs = [...doc.querySelectorAll('img')];
+      const results = [];
+      const plural = (n, s, p) => n === 1 ? s : (p || s + 's');
+
+      if (!design.blocks.length) {
+        renderPresendResults([{ level: 'info', text: 'The email is empty — add some blocks first.' }]);
+        $('#presend-backdrop').classList.add('open');
+        return;
+      }
+
+      const hrefOf = a => (a.getAttribute('href') || '').trim();
+      const isUnset = h => !h || h === '#' || h === 'https://' || h === 'http://';
+      // Footer boilerplate (view-in-browser / unsubscribe) is checked
+      // separately, so exclude it from the generic CTA dead-link count.
+      const isBoiler = a => /unsub|opt-?out|preference|view (in|online)|browser/i.test(a.textContent);
+
+      // Dead / unset content links (CTAs)
+      const dead = anchors.filter(a => isUnset(hrefOf(a)) && !isBoiler(a));
+      results.push(dead.length
+        ? { level: 'warn', text: `${dead.length} ${plural(dead.length, 'link has', 'links have')} no destination yet (still "#" or empty).` }
+        : { level: 'ok', text: 'All links point somewhere.' });
+
+      // Images missing an alt attribute (empty alt="" is fine for decorative)
+      const noAlt = imgs.filter(i => !i.hasAttribute('alt'));
+      results.push(noAlt.length
+        ? { level: 'warn', text: `${noAlt.length} ${plural(noAlt.length, 'image is', 'images are')} missing alt text — it hurts accessibility and shows nothing when images are blocked.` }
+        : { level: 'ok', text: imgs.length ? 'Every image has alt text.' : 'No images to check.' });
+
+      // Unsubscribe link — must be present AND point somewhere real
+      const unsubLink = anchors.find(a =>
+        /unsub|opt-?out|preference/i.test(hrefOf(a) + ' ' + a.textContent));
+      if (!unsubLink) {
+        results.push({ level: 'warn', text: 'No unsubscribe link found — anti-spam laws (CAN-SPAM, GDPR) generally require one. Add a Footer block.' });
+      } else if (isUnset(hrefOf(unsubLink))) {
+        results.push({ level: 'warn', text: 'Your unsubscribe link has no destination yet — set a real URL in the Footer block.' });
+      } else {
+        results.push({ level: 'ok', text: 'An unsubscribe link is present and points somewhere.' });
+      }
+
+      // Preheader
+      results.push((design.preheader || '').trim()
+        ? { level: 'ok', text: 'Preheader (inbox preview text) is set.' }
+        : { level: 'info', text: 'No preheader set — add one in Design Settings for a stronger inbox preview.' });
+
+      // Placeholder art
+      const placeholders = imgs.filter(i => /data:image\/svg\+xml/.test(i.getAttribute('src') || ''));
+      if (placeholders.length) results.push({ level: 'info',
+        text: `${placeholders.length} ${plural(placeholders.length, 'image', 'images')} still ${plural(placeholders.length, 'uses', 'use')} placeholder art — swap in real images before sending.` });
+
+      // Heavy embedded images
+      const heavy = imgs.filter(i => {
+        const s = i.getAttribute('src') || '';
+        return s.startsWith('data:') && s.length > 100 * 1024;
+      });
+      if (heavy.length) results.push({ level: 'warn',
+        text: `${heavy.length} embedded ${plural(heavy.length, 'image is', 'images are')} very large (>100 KB) — host them via Email Assets instead of embedding.` });
+
+      // Any working CTA at all?
+      const realLinks = anchors.filter(a => {
+        const h = (a.getAttribute('href') || '').trim();
+        return /^https?:\/\/.+/.test(h) && h !== 'https://';
+      });
+      if (!realLinks.length) results.push({ level: 'info',
+        text: 'No working call-to-action link yet — add a Button or link so readers can act.' });
+
+      renderPresendResults(results);
+      $('#presend-backdrop').classList.add('open');
+    }
+    function renderPresendResults(results) {
+      const host = $('#presend-results');
+      host.innerHTML = '';
+      const warns = results.filter(r => r.level === 'warn').length;
+      const summary = document.createElement('div');
+      summary.className = 'presend-summary ' + (warns ? 'has-warn' : 'clean');
+      summary.textContent = warns
+        ? `${warns} thing${warns > 1 ? 's' : ''} worth fixing before you send.`
+        : 'Looks good — no blocking issues found.';
+      host.appendChild(summary);
+      for (const r of results) {
+        const row = document.createElement('div');
+        row.className = 'presend-item ' + r.level;
+        const ico = document.createElement('span');
+        ico.className = 'presend-ico';
+        const txt = document.createElement('span');
+        txt.textContent = r.text;
+        row.append(ico, txt);
+        host.appendChild(row);
+      }
+    }
+    $('#btn-presend').addEventListener('click', runPresendCheck);
     // Drop onto empty canvas area appends at the end.
     $('#bcanvas').addEventListener('dragover', e => e.preventDefault());
     $('#bcanvas').addEventListener('drop', e => {
@@ -4999,6 +5148,7 @@ ${rows}
         else if ($('#assets-backdrop').classList.contains('open')) $('#assets-backdrop').classList.remove('open');
         else if ($('#presets-backdrop').classList.contains('open')) $('#presets-backdrop').classList.remove('open');
         else if ($('#templates-backdrop').classList.contains('open')) $('#templates-backdrop').classList.remove('open');
+        else if ($('#presend-backdrop').classList.contains('open')) $('#presend-backdrop').classList.remove('open');
         else if ($('#utm-backdrop').classList.contains('open')) $('#utm-backdrop').classList.remove('open');
         else if ($('#findbar').classList.contains('open') && document.activeElement !== inputEl) closeFindBar();
       }
