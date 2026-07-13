@@ -560,6 +560,13 @@
     padding: 18px;
     background:
       radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0) 0 0 / 16px 16px;
+    transition: background-color 0.2s ease;
+  }
+  /* Dark-mode inbox preview: put the email on a dark surface so transparent
+     backgrounds and low-contrast text that vanish in dark clients show up. */
+  .preview-stage.dark-preview {
+    background-color: #16181d;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0);
   }
   .device-frame {
     background: #fff;
@@ -861,6 +868,17 @@
   }
   .insp-actions button:hover { border-color: var(--accent); }
   .insp-actions button.danger { color: var(--danger); }
+
+  /* Merge-tag (fields) picker */
+  .fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .fields-grid button {
+    display: flex; flex-direction: column; gap: 2px; text-align: left;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md);
+    background: var(--panel); color: var(--fg); cursor: pointer; font-family: inherit;
+  }
+  .fields-grid button:hover { border-color: var(--accent); }
+  .fields-grid button code { font-family: var(--code-font); font-size: 12px; color: var(--accent); }
+  .fields-grid button small { font-size: 11px; color: var(--fg-dim); }
 
   /* Pre-send check results */
   .presend-summary { font-size: 13px; font-weight: 600; padding: 6px 0 12px; }
@@ -1166,6 +1184,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 14a5 5 0 007.1 0l2.4-2.4a5 5 0 00-7.1-7.1L11 5.9"/><path d="M14 10a5 5 0 00-7.1 0l-2.4 2.4a5 5 0 007.1 7.1L13 18.1"/></svg>
       <span class="label">UTM</span>
     </button>
+    <button class="tbtn" id="btn-fields" title="Insert a personalization field (merge tag)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4H6a2 2 0 00-2 2v3a1.5 1.5 0 010 6v3a2 2 0 002 2h2M16 4h2a2 2 0 012 2v3a1.5 1.5 0 000 6v3a2 2 0 01-2 2h-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="label">Fields</span>
+    </button>
     <div class="toolbar-sep"></div>
     <button class="tbtn" id="btn-upload-file" title="Upload HTML file (⌘O)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke-linecap="round"/></svg>
@@ -1275,6 +1297,9 @@
           <button class="tbtn" id="btn-visual-edit" title="Edit directly in the preview" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 6.5l3 3" stroke-linecap="round"/></svg>
             <span class="label">Edit</span>
+          </button>
+          <button class="tbtn icon-only" id="btn-dark-preview" title="Preview on a dark background (dark-mode inboxes)" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 000 18 5 5 0 010-10 4 4 0 004-4c0-1-.4-2-1-2.6A9 9 0 0012 3z"/></svg>
           </button>
           <button class="tbtn icon-only" id="btn-open-window" title="Open preview in new window">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 4h6v6M20 4l-8 8M8 6H5a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1v-3"/></svg>
@@ -1430,6 +1455,14 @@
     <div class="inspector-empty" id="tpl-mine-empty" style="margin-top:4px;">
       Nothing saved yet — build something, then use “Save template”.
     </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="fields-backdrop">
+  <div class="modal">
+    <h2><span class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 4H6a2 2 0 00-2 2v3a1.5 1.5 0 010 6v3a2 2 0 002 2h2M16 4h2a2 2 0 012 2v3a1.5 1.5 0 000 6v3a2 2 0 01-2 2h-2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Insert a field</h2>
+    <p class="sub">Personalization tags your email platform fills in per recipient. Inserted at the cursor in the code editor.</p>
+    <div class="fields-grid" id="fields-grid"></div>
   </div>
 </div>
 
@@ -2505,6 +2538,39 @@
       frame.className = 'device-frame ' + device;
     });
   });
+  $('#btn-dark-preview').addEventListener('click', () => {
+    const on = $('#preview-stage').classList.toggle('dark-preview');
+    $('#btn-dark-preview').setAttribute('aria-pressed', String(on));
+    toast(on ? 'Previewing on a dark background' : 'Back to light background');
+  });
+
+  /* Merge-tag / personalization field picker. Tokens insert at the code
+     cursor (switching out of the Builder first so the result is visible). */
+  const MERGE_TAGS = [
+    ['{{first_name}}', 'First name'], ['{{last_name}}', 'Last name'],
+    ['{{full_name}}', 'Full name'], ['{{email}}', 'Email address'],
+    ['{{company}}', 'Company'], ['{{city}}', 'City'],
+    ['{{unsubscribe_url}}', 'Unsubscribe URL'], ['{{current_year}}', 'Current year']
+  ];
+  (function () {
+    const grid = $('#fields-grid');
+    for (const [tag, label] of MERGE_TAGS) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.innerHTML = '<code></code><small></small>';
+      btn.querySelector('code').textContent = tag;
+      btn.querySelector('small').textContent = label;
+      btn.addEventListener('click', () => {
+        if (builder.active) builder.setMode(false); // ensure the code editor is showing
+        $('#fields-backdrop').classList.remove('open');
+        inputEl.focus();
+        insertAtCaret(tag);
+        toast('Inserted ' + tag);
+      });
+      grid.appendChild(btn);
+    }
+    $('#btn-fields').addEventListener('click', () => $('#fields-backdrop').classList.add('open'));
+  })();
   $('#btn-open-window').addEventListener('click', () => {
     const f = activeFile();
     if (!f) return;
@@ -4214,6 +4280,45 @@ ${rows}
         T('columns', {}),
         T('button', { btnLabel: 'Read more' }),
         T('spacer', {}), T('footer', {})
+      ]},
+      { name: 'Welcome', build: () => [
+        T('header', {}),
+        T('hero', { headline: 'Welcome aboard, {{first_name}}!', sub: 'We’re glad you’re here. Here’s how to get the most out of your account.', btnLabel: 'Get started' }),
+        T('features', {}),
+        T('button', { btnLabel: 'Explore your dashboard' }),
+        T('spacer', {}), T('footer', {})
+      ]},
+      { name: 'Sale', build: () => [
+        T('header', {}),
+        T('hero', { headline: 'Our biggest sale of the year', sub: 'Up to 40% off — this weekend only.', btnLabel: 'Shop the sale' }),
+        T('coupon', {}),
+        T('product', {}),
+        T('product', { title: 'Second product', price: '$29' }),
+        T('button', { btnLabel: 'Shop all deals' }),
+        T('footer', {})
+      ]},
+      { name: 'Event invite', build: () => [
+        T('header', {}),
+        T('hero', { headline: 'You’re invited', sub: 'Join us for an evening of talks, demos, and networking.', btnLabel: 'RSVP now' }),
+        T('text', { content: 'When: Thursday, June 12 · 6:00 PM\nWhere: The Riverside Hall, Downtown', align: 'center' }),
+        T('divider', {}),
+        T('button', { btnLabel: 'Add to calendar' }),
+        T('footer', {})
+      ]},
+      { name: 'Testimonial', build: () => [
+        T('header', {}),
+        T('hero', { headline: 'Loved by teams like yours', sub: 'See why thousands switched — and never looked back.', btnLabel: 'Start free' }),
+        T('quote', {}),
+        T('rating', {}),
+        T('button', { btnLabel: 'Try it free' }),
+        T('footer', {})
+      ]},
+      { name: 'Win-back', build: () => [
+        T('header', {}),
+        T('hero', { headline: 'We miss you, {{first_name}}', sub: 'Here’s 20% off to pick up where you left off.', btnLabel: 'Come back' }),
+        T('coupon', { code: 'COMEBACK20', label: 'A little something to welcome you back' }),
+        T('button', { btnLabel: 'Shop now' }),
+        T('spacer', {}), T('footer', {})
       ]}
     ];
 
@@ -5224,6 +5329,7 @@ ${rows}
         else if ($('#presets-backdrop').classList.contains('open')) $('#presets-backdrop').classList.remove('open');
         else if ($('#templates-backdrop').classList.contains('open')) $('#templates-backdrop').classList.remove('open');
         else if ($('#presend-backdrop').classList.contains('open')) $('#presend-backdrop').classList.remove('open');
+        else if ($('#fields-backdrop').classList.contains('open')) $('#fields-backdrop').classList.remove('open');
         else if ($('#utm-backdrop').classList.contains('open')) $('#utm-backdrop').classList.remove('open');
         else if ($('#findbar').classList.contains('open') && document.activeElement !== inputEl) closeFindBar();
       }
